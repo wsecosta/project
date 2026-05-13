@@ -25,6 +25,7 @@
             background-color: var(--bg-main);
             color: #1e293b;
             margin: 0;
+            overflow-x: hidden; /* Adicionado ao body para garantir o funcionamento do position: sticky no cabeçalho */
         }
 
         /* Classes utilitárias para esconder a barra de scroll no mobile mas manter o comportamento */
@@ -495,7 +496,8 @@
             }
 
             return (
-                <div className="bg-slate-50 min-h-screen text-slate-800 flex flex-col overflow-x-hidden">
+                // Alteração: removida a classe overflow-x-hidden daqui
+                <div className="bg-slate-50 min-h-screen text-slate-800 flex flex-col">
                     <div className={`sticky-header-container px-4 md:px-8 ${isScrolled ? 'scrolled-header' : ''}`}>
                         <div className="max-w-7xl mx-auto">
                             {/* Cabeçalho mais compacto (margens e gaps reduzidos) */}
@@ -556,7 +558,8 @@
                             </div>
                             
                             <div className="lg:col-span-4 space-y-6">
-                                <div className="glass-card p-6 rounded-3xl sticky top-[280px] shadow-sm">
+                                {/* Alteração: top-[280px] ajustado para top-[160px] */}
+                                <div className="glass-card p-6 rounded-3xl sticky top-[160px] shadow-sm">
                                     <h2 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2"><i className="fas fa-chart-pie text-indigo-500"></i> Distribuição Atual</h2>
                                     <div className="relative h-56 mb-8"><canvas ref={chartRef}></canvas></div>
 
