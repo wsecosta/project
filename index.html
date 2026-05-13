@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestão de Projetos Cloud - Wilson Costa</title>
+    <title>New Gestão de Projetos Cloud - Wilson Costa</title>
     
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -141,17 +141,23 @@
 
         const { useState, useEffect, useRef, useMemo } = React;
 
+        // =========================================================================
+        // ATENÇÃO: CONFIGURAÇÃO DO NOVO PROJETO (ansr-idw)
+        // Substitua os campos que dizem "COLE_..._AQUI" com os dados do seu novo projeto
+        // =========================================================================
         const firebaseConfig = {
-            apiKey: "AIzaSyBou2nfAg9EL2kam8y1_8qPtRcUfJvo9AE",
-            authDomain: "ger-projeto-ansr.firebaseapp.com",
-            projectId: "ger-projeto-ansr",
-            storageBucket: "ger-projeto-ansr.firebasestorage.app",
-            messagingSenderId: "409599611361",
-            appId: "1:409599611361:web:f9dd2ab0915e14ed3902a0",
-            measurementId: "G-PV4NR6B03C"
+            apiKey: "AIzaSyDpFpNmX136PvXJ_xrIXAhyY8jLC3AlQlE",
+            authDomain: "ansr-idw.firebaseapp.com",
+            projectId: "ansr-idw",
+            storageBucket: "ansr-idw.firebasestorage.app",
+            messagingSenderId: "416766004637",
+            appId: "1:416766004637:web:115f1fda7d2226e08fb374",
+            measurementId: "G-ME0M61BPHD"
         };
 
-        const appIdentifier = "projeto-wilson-2026";
+        // Atualizei o identificador para o novo projeto
+        const appIdentifier = "ansr-idw"; 
+        
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
