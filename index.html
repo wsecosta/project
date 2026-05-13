@@ -25,7 +25,7 @@
             background-color: var(--bg-main);
             color: #1e293b;
             margin: 0;
-            overflow-x: hidden; /* Adicionado ao body para garantir o funcionamento do position: sticky no cabeçalho */
+            overflow-x: hidden;
         }
 
         /* Classes utilitárias para esconder a barra de scroll no mobile mas manter o comportamento */
@@ -74,8 +74,8 @@
             z-index: 40;
             background-color: rgba(248, 250, 252, 0.95);
             backdrop-filter: blur(12px);
-            padding-top: 0.75rem; /* Reduzido para ficar mais compacto */
-            padding-bottom: 0.5rem; /* Reduzido para ficar mais compacto */
+            padding-top: 0.75rem; 
+            padding-bottom: 0.5rem; 
             border-bottom: 1px solid transparent;
         }
 
@@ -397,7 +397,7 @@
                     title: subtaskData.title,
                     completed: false,
                     progress: 0,
-                    notes: subtaskData.note.trim() ? [{ text: subtaskData.note, time, progress: 0 }] : []
+                    notes: subtaskData.note.trim() ? [{ text: subtaskData.note, time, completed: false }] : []
                 });
 
                 await updateDoc(doc(db, 'artifacts', appIdentifier, 'public', 'data', 'projects', p.id), { 
@@ -408,17 +408,19 @@
                 setSubtaskData({ parentId: '', subId: null, title: '', note: '' });
             };
 
-            // Atualizado: Ajusta checkbox para forçar 100% no clique ou retroceder baseando-se no histórico
+            // Atualizado: Sincroniza o toggle da tarefa principal com todas as suas notas
             const toggleSub = async (tId, sId) => {
                 const p = projects.find(proj => proj.id === tId);
                 const newSubs = p.subtasks.map(s => {
                     if (s.id === sId) {
                         const isCompleted = !s.completed;
-                        const fallbackProgress = s.notes && s.notes.length > 0 ? (s.notes[s.notes.length - 1].progress || 0) : 0;
+                        // Forçar o estado em todas as notas da tarefa
+                        const newNotes = (s.notes || []).map(n => ({ ...n, completed: isCompleted }));
                         return { 
                             ...s, 
                             completed: isCompleted,
-                            progress: isCompleted ? 100 : fallbackProgress 
+                            notes: newNotes,
+                            progress: isCompleted ? 100 : 0 
                         };
                     }
                     return s;
@@ -430,34 +432,64 @@
                 });
             };
 
-            // Atualizado: Aceita progresso
-            const addHistoryNote = async (projectId, subtaskId, text, progressVal) => {
+            // NOVA FUNÇÃO: Toggle (flegar) diretamente na Nota de Histórico
+            const toggleHistoryNote = async (projectId, subtaskId, noteIndex) => {
+                const project = projects.find(p => p.id === projectId);
+                if (!project) return;
+
+                const newSubtasks = project.subtasks.map(sub => {
+                    if (sub.id === subtaskId) {
+                        const newNotes = [...(sub.notes || [])];
+                        // Inverte o status de completado da nota
+                        newNotes[noteIndex] = { ...newNotes[noteIndex], completed: !newNotes[noteIndex].completed };
+                        
+                        // Recalcula o progresso da tarefa baseado nas notas finalizadas
+                        const completedCount = newNotes.filter(n => n.completed).length;
+                        const newProgress = newNotes.length > 0 ? Math.round((completedCount / newNotes.length) * 100) : 0;
+                        
+                        return { ...sub, notes: newNotes, progress: newProgress, completed: newProgress === 100 };
+                    }
+                    return sub;
+                });
+
+                // Se todas as sub-tarefas acabarem concluídas, sugerir 'Concluído'
+                const allDone = newSubtasks.length > 0 && newSubtasks.every(s => s.completed);
+                await updateDoc(doc(db, 'artifacts', appIdentifier, 'public', 'data', 'projects', projectId), { 
+                    subtasks: newSubtasks,
+                    status: allDone ? 'Concluído' : (project.status === 'Concluído' ? 'Andamento' : project.status)
+                });
+            };
+
+            // Atualizado: Nova nota adicionada não é marcada como concluída por padrão
+            const addHistoryNote = async (projectId, subtaskId, text) => {
                 if (!text.trim()) return;
                 const project = projects.find(p => p.id === projectId);
                 if (!project) return;
                 const time = new Date().toLocaleString('pt-PT', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
+                
                 const newSubtasks = project.subtasks.map(sub => {
                     if (sub.id === subtaskId) {
-                        const newNotes = [...(sub.notes || []), { text, time, progress: progressVal }];
-                        return { ...sub, notes: newNotes, progress: progressVal, completed: progressVal === 100 };
+                        const newNotes = [...(sub.notes || []), { text, time, completed: false }];
+                        // Ao adicionar uma nota não concluída, a % pode descer
+                        const completedCount = newNotes.filter(n => n.completed).length;
+                        const newProgress = newNotes.length > 0 ? Math.round((completedCount / newNotes.length) * 100) : 0;
+                        return { ...sub, notes: newNotes, progress: newProgress, completed: newProgress === 100 };
                     }
                     return sub;
                 });
                 await updateDoc(doc(db, 'artifacts', appIdentifier, 'public', 'data', 'projects', projectId), { subtasks: newSubtasks });
             };
 
-            // Atualizado: Edita progresso também
-            const editHistoryNote = async (projectId, subtaskId, noteIndex, newText, newProgress) => {
+            // Edita a nota sem mexer no status completado
+            const editHistoryNote = async (projectId, subtaskId, noteIndex, newText) => {
                 if (!newText.trim()) return;
                 const project = projects.find(p => p.id === projectId);
                 if (!project) return;
                 const newSubtasks = project.subtasks.map(sub => {
                     if (sub.id === subtaskId) {
                         const newNotes = [...(sub.notes || [])];
-                        newNotes[noteIndex] = { ...newNotes[noteIndex], text: newText, progress: newProgress };
-                        // Atualiza a barra de progresso da tarefa para basear-se na nota mais recente
-                        const latestProgress = newNotes.length > 0 ? (newNotes[newNotes.length - 1].progress || 0) : 0;
-                        return { ...sub, notes: newNotes, progress: latestProgress, completed: latestProgress === 100 };
+                        newNotes[noteIndex] = { ...newNotes[noteIndex], text: newText };
+                        return { ...sub, notes: newNotes };
                     }
                     return sub;
                 });
@@ -472,8 +504,11 @@
                     if (sub.id === subtaskId) {
                         const newNotes = [...(sub.notes || [])];
                         newNotes.splice(noteIndex, 1);
-                        const latestProgress = newNotes.length > 0 ? (newNotes[newNotes.length - 1].progress || 0) : 0;
-                        return { ...sub, notes: newNotes, progress: latestProgress, completed: latestProgress === 100 };
+                        // Recalcula progresso pois perdeu uma nota
+                        const completedCount = newNotes.filter(n => n.completed).length;
+                        // Se apagar todas as notas, assume 0 progresso ou 100% se estava finalizado (assumiremos 0 por segurança, ou mantemos concluída)
+                        const newProgress = newNotes.length > 0 ? Math.round((completedCount / newNotes.length) * 100) : (sub.completed ? 100 : 0);
+                        return { ...sub, notes: newNotes, progress: newProgress, completed: newProgress === 100 };
                     }
                     return sub;
                 });
@@ -559,9 +594,10 @@
                                         onDelete={() => deleteProject(p.id)}
                                         onStatus={(s) => updateStatus(p.id, s)}
                                         onToggleSub={(sId) => toggleSub(p.id, sId)}
-                                        onAddHistoryNote={(sId, txt, prog) => addHistoryNote(p.id, sId, txt, prog)}
-                                        onEditHistoryNote={(sId, nIdx, txt, prog) => editHistoryNote(p.id, sId, nIdx, txt, prog)}
+                                        onAddHistoryNote={(sId, txt) => addHistoryNote(p.id, sId, txt)}
+                                        onEditHistoryNote={(sId, nIdx, txt) => editHistoryNote(p.id, sId, nIdx, txt)}
                                         onDeleteHistoryNote={(sId, nIdx) => deleteHistoryNote(p.id, sId, nIdx)}
+                                        onToggleHistoryNote={(sId, nIdx) => toggleHistoryNote(p.id, sId, nIdx)}
                                         onAddSub={() => { setSubtaskData({ parentId: p.id, subId: null, title: '', note: '' }); setIsSubtaskModalOpen(true); }}
                                         onMove={(dir) => moveProject(p.id, dir)}
                                     />
@@ -658,35 +694,32 @@
             );
         }
 
-        function ProjectCard({ p, isCompact, onEdit, onDelete, onStatus, onToggleSub, onAddSub, onAddHistoryNote, onEditHistoryNote, onDeleteHistoryNote, onMove }) {
+        function ProjectCard({ p, isCompact, onEdit, onDelete, onStatus, onToggleSub, onAddSub, onAddHistoryNote, onEditHistoryNote, onDeleteHistoryNote, onToggleHistoryNote, onMove }) {
             const [isManualCollapsed, setIsManualCollapsed] = useState(null);
             const [addingToSubId, setAddingToSubId] = useState(null);
             
             const [newNoteText, setNewNoteText] = useState("");
-            const [newNoteProgress, setNewNoteProgress] = useState(0);
             
             const [editingNote, setEditingNote] = useState({ subId: null, idx: null });
             const [editNoteText, setEditNoteText] = useState("");
-            const [editNoteProgress, setEditNoteProgress] = useState(0);
 
             const isCollapsed = isManualCollapsed !== null ? isManualCollapsed : isCompact;
 
-            // CÁLCULO GERAL: Agora baseia-se na MÉDIA EXATA da evolução de todas as tarefas
+            // CÁLCULO GERAL: Média da evolução de todas as tarefas baseando-se no percentual calculado internamente em cada nota
             const total = p.subtasks?.length || 0;
             const sumProgress = p.subtasks?.reduce((acc, sub) => acc + (sub.progress ?? (sub.completed ? 100 : 0)), 0) || 0;
             const progress = total > 0 ? Math.round(sumProgress / total) : (p.status === 'Concluído' ? 100 : 0);
             
             const handleAddNote = (sub) => {
                 if (!newNoteText.trim()) return;
-                onAddHistoryNote(sub.id, newNoteText, newNoteProgress);
+                onAddHistoryNote(sub.id, newNoteText);
                 setNewNoteText("");
-                setNewNoteProgress(0);
                 setAddingToSubId(null);
             };
 
             const handleSaveEditNote = (subId, idx) => {
                 if (editNoteText.trim() !== "") {
-                    onEditHistoryNote(subId, idx, editNoteText, editNoteProgress);
+                    onEditHistoryNote(subId, idx, editNoteText);
                 }
                 setEditingNote({ subId: null, idx: null });
             };
@@ -751,9 +784,9 @@
                                     <div key={sub.id} className="bg-slate-50/50 p-4 rounded-2xl border border-transparent hover:border-slate-100 transition-all">
                                         <div className="flex items-center justify-between mb-3">
                                             <div className="flex items-center gap-3 w-full pr-4">
+                                                {/* Checkbox da tarefa altera automaticamente TODAS as notas dentro dela */}
                                                 <input type="checkbox" checked={sub.completed} onChange={() => onToggleSub(sub.id)} className="w-5 h-5 rounded-lg border-slate-300 text-indigo-600 cursor-pointer flex-shrink-0"/>
                                                 
-                                                {/* Mini barra de progresso INDIVIDUAL da tarefa */}
                                                 <div className="flex-1 min-w-0">
                                                     <div className="flex justify-between items-center mb-1">
                                                         <p className={`font-bold text-sm truncate pr-2 ${sub.completed ? 'line-through text-slate-400' : 'text-slate-700'}`}>{sub.title}</p>
@@ -766,24 +799,13 @@
                                             </div>
                                             <button onClick={() => {
                                                 setAddingToSubId(addingToSubId === sub.id ? null : sub.id);
-                                                setNewNoteProgress(sub.progress ?? (sub.completed ? 100 : 0));
-                                            }} className={`text-[10px] flex-shrink-0 font-bold px-3 py-1 rounded-lg transition-all flex items-center gap-2 ${addingToSubId === sub.id ? 'bg-indigo-600 text-white' : 'bg-white text-indigo-600 border border-indigo-100 hover:bg-indigo-50'}`}><i className="fas fa-pencil"></i> {addingToSubId === sub.id ? 'Cancelar' : 'Nova Nota'}</button>
+                                            }} className={`text-[10px] flex-shrink-0 font-bold px-3 py-1 rounded-lg transition-all flex items-center gap-2 ${addingToSubId === sub.id ? 'bg-indigo-600 text-white' : 'bg-white text-indigo-600 border border-indigo-100 hover:bg-indigo-50'}`}><i className="fas fa-plus"></i> {addingToSubId === sub.id ? 'Cancelar' : 'Nova Etapa'}</button>
                                         </div>
 
                                         {addingToSubId === sub.id && (
                                             <div className="mb-4 animate-slide bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
-                                                <textarea className="note-input mb-2" placeholder="Descreva a nova atualização..." value={newNoteText} onChange={(e) => setNewNoteText(e.target.value)} rows="3" autoFocus />
-                                                
-                                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mt-1">
-                                                    {/* Slider de Evolução ao Criar Nota */}
-                                                    <div className="flex items-center gap-3 flex-1">
-                                                        <span className="text-[10px] font-bold text-slate-400 uppercase">Evolução:</span>
-                                                        <input type="range" min="0" max="100" value={newNoteProgress} onChange={e => setNewNoteProgress(Number(e.target.value))} className="flex-1 h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"/>
-                                                        <span className="text-[10px] font-black text-indigo-600 w-6 text-right">{newNoteProgress}%</span>
-                                                    </div>
-
-                                                    <div className="flex justify-end"><button onClick={() => handleAddNote(sub)} className="bg-indigo-600 text-white text-[10px] px-4 py-2 rounded-xl font-bold shadow-md hover:bg-indigo-700 transition-all">Guardar Registo</button></div>
-                                                </div>
+                                                <textarea className="note-input mb-2" placeholder="Descreva a nova atualização/etapa..." value={newNoteText} onChange={(e) => setNewNoteText(e.target.value)} rows="2" autoFocus />
+                                                <div className="flex justify-end"><button onClick={() => handleAddNote(sub)} className="bg-indigo-600 text-white text-[10px] px-4 py-2 rounded-xl font-bold shadow-md hover:bg-indigo-700 transition-all">Guardar Registo</button></div>
                                             </div>
                                         )}
 
@@ -803,35 +825,31 @@
                                                                         rows="2" 
                                                                         autoFocus 
                                                                     />
-                                                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mt-2">
-                                                                        {/* Slider de Evolução ao Editar Nota */}
-                                                                        <div className="flex items-center gap-3 flex-1 pr-2">
-                                                                            <input type="range" min="0" max="100" value={editNoteProgress} onChange={e => setEditNoteProgress(Number(e.target.value))} className="flex-1 h-1 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"/>
-                                                                            <span className="text-[10px] font-black text-indigo-600 w-6 text-right">{editNoteProgress}%</span>
-                                                                        </div>
-
-                                                                        <div className="flex justify-end gap-2">
-                                                                            <button onClick={() => setEditingNote({ subId: null, idx: null })} className="text-slate-400 text-[10px] px-2 py-1 rounded-lg hover:bg-slate-50 transition-all font-bold">Cancelar</button>
-                                                                            <button onClick={() => handleSaveEditNote(sub.id, idx)} className="bg-indigo-600 text-white text-[10px] px-2 py-1 rounded-lg font-bold shadow-sm hover:bg-indigo-700 transition-all">Salvar</button>
-                                                                        </div>
+                                                                    <div className="flex justify-end gap-2 mt-1">
+                                                                        <button onClick={() => setEditingNote({ subId: null, idx: null })} className="text-slate-400 text-[10px] px-2 py-1 rounded-lg hover:bg-slate-50 transition-all font-bold">Cancelar</button>
+                                                                        <button onClick={() => handleSaveEditNote(sub.id, idx)} className="bg-indigo-600 text-white text-[10px] px-2 py-1 rounded-lg font-bold shadow-sm hover:bg-indigo-700 transition-all">Salvar</button>
                                                                     </div>
                                                                 </div>
                                                             ) : (
                                                                 <>
-                                                                    <p className="text-[11px] text-slate-600 leading-normal italic pr-8 whitespace-pre-wrap">"{n.text}"</p>
-                                                                    <div className="flex justify-between items-center mt-1.5 border-t border-slate-50 pt-1.5">
+                                                                    <div className="flex items-start gap-2">
+                                                                        {/* Novo checkbox para a nota individual */}
+                                                                        <input 
+                                                                            type="checkbox" 
+                                                                            checked={n.completed || false} 
+                                                                            onChange={() => onToggleHistoryNote(sub.id, idx)} 
+                                                                            className="mt-0.5 w-3.5 h-3.5 rounded border-slate-300 text-indigo-600 cursor-pointer flex-shrink-0"
+                                                                        />
+                                                                        <p className={`text-[11px] leading-normal italic pr-8 whitespace-pre-wrap ${n.completed ? 'line-through text-slate-400' : 'text-slate-600'}`}>"{n.text}"</p>
+                                                                    </div>
+
+                                                                    <div className="flex justify-between items-center mt-1.5 border-t border-slate-50 pt-1.5 pl-5">
                                                                         <span className="text-[8px] font-bold text-slate-300 uppercase tracking-widest flex items-center gap-1.5">
                                                                             <i className="far fa-clock"></i> {n.time}
-                                                                            {/* Badge indicativo de progresso caso esta nota o tenha */}
-                                                                            {n.progress !== undefined && (
-                                                                                <span className="ml-1 px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-500 font-black lowercase tracking-tighter">
-                                                                                    {n.progress}%
-                                                                                </span>
-                                                                            )}
                                                                         </span>
                                                                         
                                                                         <div className="opacity-0 group-hover/history:opacity-100 transition-all flex gap-0.5">
-                                                                            <button onClick={() => { setEditingNote({ subId: sub.id, idx }); setEditNoteText(n.text); setEditNoteProgress(n.progress || 0); }} className="text-indigo-300 hover:text-indigo-600 transition-all px-1.5 py-0.5" title="Editar registo"><i className="fas fa-pencil-alt text-[9px]"></i></button>
+                                                                            <button onClick={() => { setEditingNote({ subId: sub.id, idx }); setEditNoteText(n.text); }} className="text-indigo-300 hover:text-indigo-600 transition-all px-1.5 py-0.5" title="Editar registo"><i className="fas fa-pencil-alt text-[9px]"></i></button>
                                                                             <button onClick={() => onDeleteHistoryNote(sub.id, idx)} className="text-red-200 hover:text-red-500 transition-all px-1.5 py-0.5" title="Remover registo"><i className="fas fa-trash-alt text-[9px]"></i></button>
                                                                         </div>
                                                                     </div>
