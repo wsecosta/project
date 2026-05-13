@@ -162,7 +162,10 @@
             const [loading, setLoading] = useState(true);
             const [authLoading, setAuthLoading] = useState(true);
             const [isScrolled, setIsScrolled] = useState(false);
+            
             const [hideCompleted, setHideCompleted] = useState(false);
+            // NOVO ESTADO: Controlo de Minimizar/Expandir todos os não concluídos
+            const [globalCollapse, setGlobalCollapse] = useState({ collapsed: false, count: 0 });
 
             const [email, setEmail] = useState('');
             const [password, setPassword] = useState('');
@@ -560,6 +563,13 @@
                                 </div>
                                 <div className="flex overflow-x-auto hide-scrollbar gap-2 w-full md:w-auto pb-1">
                                     <button onClick={exportBackup} className="bg-emerald-50 border border-emerald-200 text-emerald-700 px-3 py-1.5 rounded-xl font-bold hover:bg-emerald-100 shadow-sm text-xs flex items-center gap-1.5 transition-all whitespace-nowrap flex-shrink-0"><i className="fas fa-file-download"></i> Exportar Backup</button>
+                                    
+                                    {/* NOVO BOTÃO: Minimizar/Expandir Ativos */}
+                                    <button onClick={() => setGlobalCollapse(prev => ({ collapsed: !prev.collapsed, count: prev.count + 1 }))} className="bg-white border border-slate-200 text-slate-600 px-3 py-1.5 rounded-xl font-bold hover:bg-slate-50 shadow-sm text-xs flex items-center gap-1.5 whitespace-nowrap flex-shrink-0">
+                                        <i className={globalCollapse.collapsed ? 'fas fa-expand text-indigo-500' : 'fas fa-compress'}></i> 
+                                        {globalCollapse.collapsed ? 'Expandir Ativos' : 'Minimizar Ativos'}
+                                    </button>
+                                    
                                     <button onClick={() => setHideCompleted(!hideCompleted)} className="bg-white border border-slate-200 text-slate-600 px-3 py-1.5 rounded-xl font-bold hover:bg-slate-50 shadow-sm text-xs flex items-center gap-1.5 whitespace-nowrap flex-shrink-0"><i className={hideCompleted ? 'fas fa-eye-slash text-indigo-500' : 'fas fa-eye'}></i> {hideCompleted ? 'Ver Todos' : 'Ocultar Concluídos'}</button>
                                     <button onClick={() => setIsTaskModalOpen(true)} className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-1.5 rounded-xl font-bold shadow-sm text-xs flex items-center gap-1.5 whitespace-nowrap flex-shrink-0"><i className="fas fa-plus"></i> Novo Projeto</button>
                                     <button onClick={handleLogout} className="bg-red-50 text-red-600 px-3 py-1.5 rounded-xl font-bold hover:bg-red-600 hover:text-white transition-all shadow-sm text-xs flex items-center gap-1.5 whitespace-nowrap flex-shrink-0"><i className="fas fa-sign-out-alt"></i> Sair</button>
@@ -591,6 +601,7 @@
                                     <ProjectCard 
                                         key={p.id} p={p} 
                                         isCompact={hideCompleted && p.status === 'Concluído'}
+                                        globalCollapse={globalCollapse} // Propagando estado global
                                         onEdit={() => openEditTask(p)}
                                         onDelete={() => deleteProject(p.id)}
                                         onStatus={(s) => updateStatus(p.id, s)}
@@ -695,7 +706,7 @@
             );
         }
 
-        function ProjectCard({ p, isCompact, onEdit, onDelete, onStatus, onToggleSub, onAddSub, onAddHistoryNote, onEditHistoryNote, onDeleteHistoryNote, onToggleHistoryNote, onMove }) {
+        function ProjectCard({ p, isCompact, globalCollapse, onEdit, onDelete, onStatus, onToggleSub, onAddSub, onAddHistoryNote, onEditHistoryNote, onDeleteHistoryNote, onToggleHistoryNote, onMove }) {
             const [isManualCollapsed, setIsManualCollapsed] = useState(null);
             const [addingToSubId, setAddingToSubId] = useState(null);
             
@@ -703,6 +714,13 @@
             
             const [editingNote, setEditingNote] = useState({ subId: null, idx: null });
             const [editNoteText, setEditNoteText] = useState("");
+
+            // Reage ao botão global de colapsar/expandir
+            useEffect(() => {
+                if (globalCollapse && globalCollapse.count > 0 && p.status !== 'Concluído') {
+                    setIsManualCollapsed(globalCollapse.collapsed);
+                }
+            }, [globalCollapse.count]);
 
             const isCollapsed = isManualCollapsed !== null ? isManualCollapsed : isCompact;
 
