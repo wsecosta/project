@@ -141,10 +141,6 @@
 
         const { useState, useEffect, useRef, useMemo } = React;
 
-        // =========================================================================
-        // ATENÇÃO: CONFIGURAÇÃO DO NOVO PROJETO (ansr-idw)
-        // Substitua os campos que dizem "COLE_..._AQUI" com os dados do seu novo projeto
-        // =========================================================================
         const firebaseConfig = {
             apiKey: "AIzaSyDpFpNmX136PvXJ_xrIXAhyY8jLC3AlQlE",
             authDomain: "ansr-idw.firebaseapp.com",
@@ -154,13 +150,13 @@
             appId: "1:416766004637:web:115f1fda7d2226e08fb374",
             measurementId: "G-ME0M61BPHD"
         };
-
-        // Atualizei o identificador para o novo projeto
-        const appIdentifier = "ansr-idw"; 
         
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
+
+        // A coleção base agora é mais simples: "projects"
+        const DB_COLLECTION = 'projects';
 
         function App() {
             const [user, setUser] = useState(null);
@@ -200,7 +196,6 @@
                     const isAConcluido = a.status === 'Concluído';
                     const isBConcluido = b.status === 'Concluído';
                     
-                    // Concluídos vão sempre para o final
                     if (isAConcluido && !isBConcluido) return 1;
                     if (!isAConcluido && isBConcluido) return -1;
                     
@@ -210,17 +205,14 @@
                         return dateB - dateA;
                     }
 
-                    // 1. Agrupamento por Status
                     const sA = statusWeight[a.status] || 99;
                     const sB = statusWeight[b.status] || 99;
                     if (sA !== sB) return sA - sB;
 
-                    // 2. Ordem de Prioridade (Alta > Média > Baixa)
                     const pA = priorityWeight[a.priority] || 2;
                     const pB = priorityWeight[b.priority] || 2;
                     if (pA !== pB) return pA - pB;
 
-                    // 3. Ordem de Criação (Mais recentes primeiro)
                     const timeA = a.createdAt?.seconds || 0;
                     const timeB = b.createdAt?.seconds || 0;
                     return timeB - timeA;
@@ -243,13 +235,18 @@
 
             useEffect(() => {
                 if (!user) return;
-                const colRef = collection(db, 'artifacts', appIdentifier, 'public', 'data', 'projects');
+                // Caminho simplificado para o seu próprio Firebase
+                const colRef = collection(db, DB_COLLECTION);
                 const unsubscribe = onSnapshot(colRef, (snapshot) => {
                     const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                     setProjects(data);
                     setLoading(false);
                 }, (error) => {
                     console.error("Firestore Error:", error);
+                    // Adicionado alerta de erro
+                    if (error.code === 'permission-denied') {
+                        alert("Erro de Permissão: Verifique as regras do Firestore no seu painel do Firebase.");
+                    }
                     setLoading(false);
                 });
                 return () => unsubscribe();
@@ -357,11 +354,10 @@
                 e.preventDefault();
                 if (!user) return;
                 try {
-                    const path = `artifacts/${appIdentifier}/public/data/projects`;
                     if (editingId) {
-                        await updateDoc(doc(db, path, editingId), taskData);
+                        await updateDoc(doc(db, DB_COLLECTION, editingId), taskData);
                     } else {
-                        await addDoc(collection(db, path), { 
+                        await addDoc(collection(db, DB_COLLECTION), { 
                             ...taskData, 
                             status: 'Pendente', 
                             subtasks: [], 
@@ -372,17 +368,26 @@
                     closeTaskModal();
                 } catch (err) { 
                     console.error("Erro ao salvar projeto:", err);
+                    alert("Erro ao guardar: O Firebase bloqueou a operação. Verifique as Regras de Segurança (Firestore Rules). Detalhe: " + err.message);
                 }
             };
 
             const deleteProject = async (id) => {
                 if (!user || !window.confirm("Eliminar este projeto permanentemente?")) return;
-                await deleteDoc(doc(db, 'artifacts', appIdentifier, 'public', 'data', 'projects', id));
+                try {
+                    await deleteDoc(doc(db, DB_COLLECTION, id));
+                } catch(err) {
+                    alert("Erro ao eliminar: " + err.message);
+                }
             };
 
             const updateStatus = async (id, newStatus) => {
                 if (!user) return;
-                await updateDoc(doc(db, 'artifacts', appIdentifier, 'public', 'data', 'projects', id), { status: newStatus });
+                try {
+                    await updateDoc(doc(db, DB_COLLECTION, id), { status: newStatus });
+                } catch(err) {
+                    alert("Erro ao atualizar estado: " + err.message);
+                }
             };
 
             const saveSubtask = async (e) => {
@@ -402,15 +407,18 @@
                     notes: subtaskData.note.trim() ? [{ text: subtaskData.note, time, completed: false }] : []
                 });
 
-                await updateDoc(doc(db, 'artifacts', appIdentifier, 'public', 'data', 'projects', p.id), { 
-                    subtasks: newSubs,
-                    status: p.status === 'Pendente' || p.status === 'Planeamento' ? 'Andamento' : p.status
-                });
-                setIsSubtaskModalOpen(false);
-                setSubtaskData({ parentId: '', subId: null, title: '', note: '' });
+                try {
+                    await updateDoc(doc(db, DB_COLLECTION, p.id), { 
+                        subtasks: newSubs,
+                        status: p.status === 'Pendente' || p.status === 'Planeamento' ? 'Andamento' : p.status
+                    });
+                    setIsSubtaskModalOpen(false);
+                    setSubtaskData({ parentId: '', subId: null, title: '', note: '' });
+                } catch(err) {
+                    alert("Erro ao adicionar tarefa: " + err.message);
+                }
             };
 
-            // NOVA FUNÇÃO: Editar o título da Tarefa/Subtask
             const editSubtask = async (projectId, subtaskId, newTitle) => {
                 if (!newTitle.trim()) return;
                 const project = projects.find(p => p.id === projectId);
@@ -421,10 +429,11 @@
                     }
                     return sub;
                 });
-                await updateDoc(doc(db, 'artifacts', appIdentifier, 'public', 'data', 'projects', projectId), { subtasks: newSubtasks });
+                try {
+                    await updateDoc(doc(db, DB_COLLECTION, projectId), { subtasks: newSubtasks });
+                } catch(err) { alert("Erro ao editar: " + err.message); }
             };
 
-            // NOVA FUNÇÃO: Excluir a Tarefa/Subtask
             const deleteSubtask = async (projectId, subtaskId) => {
                 if (!window.confirm("Remover esta tarefa e todas as suas notas permanentemente?")) return;
                 const project = projects.find(p => p.id === projectId);
@@ -433,10 +442,12 @@
                 const newSubtasks = project.subtasks.filter(sub => sub.id !== subtaskId);
                 const allDone = newSubtasks.length > 0 && newSubtasks.every(s => s.completed);
                 
-                await updateDoc(doc(db, 'artifacts', appIdentifier, 'public', 'data', 'projects', projectId), { 
-                    subtasks: newSubtasks,
-                    status: allDone ? 'Concluído' : (project.status === 'Concluído' && newSubtasks.length > 0 ? 'Andamento' : project.status)
-                });
+                try {
+                    await updateDoc(doc(db, DB_COLLECTION, projectId), { 
+                        subtasks: newSubtasks,
+                        status: allDone ? 'Concluído' : (project.status === 'Concluído' && newSubtasks.length > 0 ? 'Andamento' : project.status)
+                    });
+                } catch(err) { alert("Erro ao remover: " + err.message); }
             };
 
             const toggleSub = async (tId, sId) => {
@@ -455,10 +466,12 @@
                     return s;
                 });
                 const allDone = newSubs.length > 0 && newSubs.every(s => s.completed);
-                await updateDoc(doc(db, 'artifacts', appIdentifier, 'public', 'data', 'projects', tId), { 
-                    subtasks: newSubs,
-                    status: allDone ? 'Concluído' : (p.status === 'Concluído' ? 'Andamento' : p.status)
-                });
+                try {
+                    await updateDoc(doc(db, DB_COLLECTION, tId), { 
+                        subtasks: newSubs,
+                        status: allDone ? 'Concluído' : (p.status === 'Concluído' ? 'Andamento' : p.status)
+                    });
+                } catch(err) { alert("Erro: " + err.message); }
             };
 
             const toggleHistoryNote = async (projectId, subtaskId, noteIndex) => {
@@ -479,10 +492,12 @@
                 });
 
                 const allDone = newSubtasks.length > 0 && newSubtasks.every(s => s.completed);
-                await updateDoc(doc(db, 'artifacts', appIdentifier, 'public', 'data', 'projects', projectId), { 
-                    subtasks: newSubtasks,
-                    status: allDone ? 'Concluído' : (project.status === 'Concluído' ? 'Andamento' : project.status)
-                });
+                try {
+                    await updateDoc(doc(db, DB_COLLECTION, projectId), { 
+                        subtasks: newSubtasks,
+                        status: allDone ? 'Concluído' : (project.status === 'Concluído' ? 'Andamento' : project.status)
+                    });
+                } catch(err) { alert("Erro: " + err.message); }
             };
 
             const addHistoryNote = async (projectId, subtaskId, text) => {
@@ -500,7 +515,8 @@
                     }
                     return sub;
                 });
-                await updateDoc(doc(db, 'artifacts', appIdentifier, 'public', 'data', 'projects', projectId), { subtasks: newSubtasks });
+                try { await updateDoc(doc(db, DB_COLLECTION, projectId), { subtasks: newSubtasks }); } 
+                catch(err) { alert("Erro: " + err.message); }
             };
 
             const editHistoryNote = async (projectId, subtaskId, noteIndex, newText) => {
@@ -515,7 +531,8 @@
                     }
                     return sub;
                 });
-                await updateDoc(doc(db, 'artifacts', appIdentifier, 'public', 'data', 'projects', projectId), { subtasks: newSubtasks });
+                try { await updateDoc(doc(db, DB_COLLECTION, projectId), { subtasks: newSubtasks }); }
+                catch(err) { alert("Erro: " + err.message); }
             };
 
             const deleteHistoryNote = async (projectId, subtaskId, noteIndex) => {
@@ -532,7 +549,8 @@
                     }
                     return sub;
                 });
-                await updateDoc(doc(db, 'artifacts', appIdentifier, 'public', 'data', 'projects', projectId), { subtasks: newSubtasks });
+                try { await updateDoc(doc(db, DB_COLLECTION, projectId), { subtasks: newSubtasks }); }
+                catch(err) { alert("Erro: " + err.message); }
             };
 
             const stats = {
