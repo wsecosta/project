@@ -496,17 +496,14 @@
             }
 
             return (
-                // Alteração: removida a classe overflow-x-hidden daqui
                 <div className="bg-slate-50 min-h-screen text-slate-800 flex flex-col">
                     <div className={`sticky-header-container px-4 md:px-8 ${isScrolled ? 'scrolled-header' : ''}`}>
                         <div className="max-w-7xl mx-auto">
-                            {/* Cabeçalho mais compacto (margens e gaps reduzidos) */}
                             <header className="flex flex-col md:flex-row justify-between items-start md:items-center mb-2 md:mb-3 gap-2 md:gap-3">
                                 <div className="flex-shrink-0">
                                     <h1 className="text-2xl md:text-3xl font-bold text-slate-900 tracking-tight">Dashboard de Projetos</h1>
                                     <p className="text-slate-500 font-medium text-xs md:text-sm mt-0.5">IDW - Gestão 2026 • <span className="text-indigo-600 font-bold">{user.email}</span></p>
                                 </div>
-                                {/* Menu de botões mais curtos com py-1.5 e px-3 para serem mais slim */}
                                 <div className="flex overflow-x-auto hide-scrollbar gap-2 w-full md:w-auto pb-1">
                                     <button onClick={exportBackup} className="bg-emerald-50 border border-emerald-200 text-emerald-700 px-3 py-1.5 rounded-xl font-bold hover:bg-emerald-100 shadow-sm text-xs flex items-center gap-1.5 transition-all whitespace-nowrap flex-shrink-0"><i className="fas fa-file-download"></i> Exportar Backup</button>
                                     <button onClick={() => setHideCompleted(!hideCompleted)} className="bg-white border border-slate-200 text-slate-600 px-3 py-1.5 rounded-xl font-bold hover:bg-slate-50 shadow-sm text-xs flex items-center gap-1.5 whitespace-nowrap flex-shrink-0"><i className={hideCompleted ? 'fas fa-eye-slash text-indigo-500' : 'fas fa-eye'}></i> {hideCompleted ? 'Ver Todos' : 'Ocultar Concluídos'}</button>
@@ -522,7 +519,6 @@
                                 <StatCard label="Planeamento" value={stats.planning} borderColor="border-sky-400" textColor="text-sky-600" />
                                 <StatCard label="Finalizados" value={stats.completed} borderColor="border-green-500" textColor="text-green-600" />
                                 
-                                {/* Card Eficiência Slim */}
                                 <div className="glass-card px-3 py-2 md:px-4 md:py-2.5 rounded-xl border-l-4 border-indigo-500 shadow-sm flex-shrink-0 min-w-[140px] lg:min-w-0 lg:flex-1">
                                     <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider leading-none mb-1">Eficiência</p>
                                     <div className="flex items-center gap-2">
@@ -558,7 +554,6 @@
                             </div>
                             
                             <div className="lg:col-span-4 space-y-6">
-                                {/* Alteração: top-[280px] ajustado para top-[160px] */}
                                 <div className="glass-card p-6 rounded-3xl sticky top-[160px] shadow-sm">
                                     <h2 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2"><i className="fas fa-chart-pie text-indigo-500"></i> Distribuição Atual</h2>
                                     <div className="relative h-56 mb-8"><canvas ref={chartRef}></canvas></div>
@@ -636,7 +631,6 @@
             );
         }
 
-        /* StatCard mais "Slim" (ajustes no padding, alinhamento e border radius) */
         function StatCard({ label, value, borderColor, textColor = "text-slate-800" }) {
             return (
                 <div className={`glass-card px-3 py-2 md:px-4 md:py-2.5 rounded-xl shadow-sm border-l-4 flex-shrink-0 min-w-[110px] md:min-w-[130px] lg:min-w-0 lg:flex-1 ${borderColor}`}>
@@ -746,35 +740,38 @@
                                             </div>
                                         )}
                                         {sub.notes && sub.notes.length > 0 && (
-                                            <div className="space-y-2 mt-3">
+                                            <div className="space-y-1.5 mt-2"> {/* Espaçamento entre as notas reduzido */}
                                                 {sub.notes.map((n, idx) => {
                                                     const isEditing = editingNote.subId === sub.id && editingNote.idx === idx;
                                                     
                                                     return (
-                                                        <div key={idx} className="bg-white p-3 rounded-xl border border-slate-100 shadow-sm group/history relative">
+                                                        // Bloco da nota com padding mais slim (px-3 py-2)
+                                                        <div key={idx} className="bg-white px-3 py-2 rounded-xl border border-slate-100 shadow-sm group/history relative">
                                                             {isEditing ? (
                                                                 <div className="animate-slide">
                                                                     <textarea 
-                                                                        className="note-input mb-2 w-full" 
+                                                                        className="note-input mb-1.5 w-full text-[11px] p-2" 
                                                                         value={editNoteText} 
                                                                         onChange={(e) => setEditNoteText(e.target.value)} 
-                                                                        rows="3" 
+                                                                        rows="2" 
                                                                         autoFocus 
                                                                     />
-                                                                    <div className="flex justify-end gap-2 mt-2">
-                                                                        <button onClick={() => setEditingNote({ subId: null, idx: null })} className="text-slate-400 text-[10px] px-3 py-1.5 rounded-lg hover:bg-slate-50 transition-all font-bold">Cancelar</button>
-                                                                        <button onClick={() => handleSaveEditNote(sub.id, idx)} className="bg-indigo-600 text-white text-[10px] px-3 py-1.5 rounded-lg font-bold shadow-sm hover:bg-indigo-700 transition-all">Salvar Edição</button>
+                                                                    <div className="flex justify-end gap-2 mt-1">
+                                                                        <button onClick={() => setEditingNote({ subId: null, idx: null })} className="text-slate-400 text-[10px] px-2 py-1 rounded-lg hover:bg-slate-50 transition-all font-bold">Cancelar</button>
+                                                                        <button onClick={() => handleSaveEditNote(sub.id, idx)} className="bg-indigo-600 text-white text-[10px] px-2 py-1 rounded-lg font-bold shadow-sm hover:bg-indigo-700 transition-all">Salvar</button>
                                                                     </div>
                                                                 </div>
                                                             ) : (
                                                                 <>
-                                                                    <p className="text-[11px] text-slate-600 leading-relaxed italic pr-8 whitespace-pre-wrap">"{n.text}"</p>
-                                                                    <div className="flex justify-between items-center mt-2 border-t border-slate-50 pt-2">
+                                                                    {/* Alterado para leading-normal para diminuir o espaçamento entre linhas */}
+                                                                    <p className="text-[11px] text-slate-600 leading-normal italic pr-8 whitespace-pre-wrap">"{n.text}"</p>
+                                                                    {/* Margens e paddings do rodapé da nota reduzidos */}
+                                                                    <div className="flex justify-between items-center mt-1.5 border-t border-slate-50 pt-1.5">
                                                                         <span className="text-[8px] font-bold text-slate-300 uppercase tracking-widest flex items-center gap-1"><i className="far fa-clock"></i> {n.time}</span>
                                                                         
-                                                                        <div className="opacity-0 group-hover/history:opacity-100 transition-all flex gap-1">
-                                                                            <button onClick={() => { setEditingNote({ subId: sub.id, idx }); setEditNoteText(n.text); }} className="text-indigo-300 hover:text-indigo-600 transition-all p-1 mr-1" title="Editar registo"><i className="fas fa-pencil-alt text-[9px]"></i></button>
-                                                                            <button onClick={() => onDeleteHistoryNote(sub.id, idx)} className="text-red-200 hover:text-red-500 transition-all p-1" title="Remover registo"><i className="fas fa-trash-alt text-[9px]"></i></button>
+                                                                        <div className="opacity-0 group-hover/history:opacity-100 transition-all flex gap-0.5">
+                                                                            <button onClick={() => { setEditingNote({ subId: sub.id, idx }); setEditNoteText(n.text); }} className="text-indigo-300 hover:text-indigo-600 transition-all px-1.5 py-0.5" title="Editar registo"><i className="fas fa-pencil-alt text-[9px]"></i></button>
+                                                                            <button onClick={() => onDeleteHistoryNote(sub.id, idx)} className="text-red-200 hover:text-red-500 transition-all px-1.5 py-0.5" title="Remover registo"><i className="fas fa-trash-alt text-[9px]"></i></button>
                                                                         </div>
                                                                     </div>
                                                                 </>
