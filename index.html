@@ -73,8 +73,8 @@
             z-index: 40;
             background-color: rgba(248, 250, 252, 0.95);
             backdrop-filter: blur(12px);
-            padding-top: 1.5rem;
-            padding-bottom: 1rem;
+            padding-top: 0.75rem; /* Reduzido para ficar mais compacto */
+            padding-bottom: 0.5rem; /* Reduzido para ficar mais compacto */
             border-bottom: 1px solid transparent;
         }
 
@@ -431,7 +431,6 @@
                 await updateDoc(doc(db, 'artifacts', appIdentifier, 'public', 'data', 'projects', projectId), { subtasks: newSubtasks });
             };
 
-            // NOVA FUNÇÃO: Editar nota no histórico
             const editHistoryNote = async (projectId, subtaskId, noteIndex, newText) => {
                 if (!newText.trim()) return;
                 const project = projects.find(p => p.id === projectId);
@@ -499,38 +498,41 @@
                 <div className="bg-slate-50 min-h-screen text-slate-800 flex flex-col overflow-x-hidden">
                     <div className={`sticky-header-container px-4 md:px-8 ${isScrolled ? 'scrolled-header' : ''}`}>
                         <div className="max-w-7xl mx-auto">
-                            <header className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 md:mb-6 gap-4 md:gap-6">
+                            {/* Cabeçalho mais compacto (margens e gaps reduzidos) */}
+                            <header className="flex flex-col md:flex-row justify-between items-start md:items-center mb-2 md:mb-3 gap-2 md:gap-3">
                                 <div className="flex-shrink-0">
-                                    <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Dashboard de Projetos</h1>
-                                    <p className="text-slate-500 font-medium text-sm mt-1">IDW - Gestão 2026 • <span className="text-indigo-600 font-bold">{user.email}</span></p>
+                                    <h1 className="text-2xl md:text-3xl font-bold text-slate-900 tracking-tight">Dashboard de Projetos</h1>
+                                    <p className="text-slate-500 font-medium text-xs md:text-sm mt-0.5">IDW - Gestão 2026 • <span className="text-indigo-600 font-bold">{user.email}</span></p>
                                 </div>
-                                <div className="flex overflow-x-auto hide-scrollbar gap-3 w-full md:w-auto pb-1">
-                                    <button onClick={exportBackup} className="bg-emerald-50 border border-emerald-200 text-emerald-700 px-4 py-2 rounded-xl font-bold hover:bg-emerald-100 shadow-sm text-xs flex items-center gap-2 transition-all whitespace-nowrap flex-shrink-0"><i className="fas fa-file-download"></i> Exportar Backup</button>
-                                    <button onClick={() => setHideCompleted(!hideCompleted)} className="bg-white border border-slate-200 text-slate-600 px-4 py-2 rounded-xl font-bold hover:bg-slate-50 shadow-sm text-xs flex items-center gap-2 whitespace-nowrap flex-shrink-0"><i className={hideCompleted ? 'fas fa-eye-slash text-indigo-500' : 'fas fa-eye'}></i> {hideCompleted ? 'Ver Todos' : 'Ocultar Concluídos'}</button>
-                                    <button onClick={() => setIsTaskModalOpen(true)} className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl font-bold shadow-lg text-xs flex items-center gap-2 whitespace-nowrap flex-shrink-0"><i className="fas fa-plus"></i> Novo Projeto</button>
-                                    <button onClick={handleLogout} className="bg-red-50 text-red-600 px-4 py-2 rounded-xl font-bold hover:bg-red-600 hover:text-white transition-all shadow-sm text-xs flex items-center gap-2 whitespace-nowrap flex-shrink-0"><i className="fas fa-sign-out-alt"></i> Sair com Segurança</button>
+                                {/* Menu de botões mais curtos com py-1.5 e px-3 para serem mais slim */}
+                                <div className="flex overflow-x-auto hide-scrollbar gap-2 w-full md:w-auto pb-1">
+                                    <button onClick={exportBackup} className="bg-emerald-50 border border-emerald-200 text-emerald-700 px-3 py-1.5 rounded-xl font-bold hover:bg-emerald-100 shadow-sm text-xs flex items-center gap-1.5 transition-all whitespace-nowrap flex-shrink-0"><i className="fas fa-file-download"></i> Exportar Backup</button>
+                                    <button onClick={() => setHideCompleted(!hideCompleted)} className="bg-white border border-slate-200 text-slate-600 px-3 py-1.5 rounded-xl font-bold hover:bg-slate-50 shadow-sm text-xs flex items-center gap-1.5 whitespace-nowrap flex-shrink-0"><i className={hideCompleted ? 'fas fa-eye-slash text-indigo-500' : 'fas fa-eye'}></i> {hideCompleted ? 'Ver Todos' : 'Ocultar Concluídos'}</button>
+                                    <button onClick={() => setIsTaskModalOpen(true)} className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-1.5 rounded-xl font-bold shadow-sm text-xs flex items-center gap-1.5 whitespace-nowrap flex-shrink-0"><i className="fas fa-plus"></i> Novo Projeto</button>
+                                    <button onClick={handleLogout} className="bg-red-50 text-red-600 px-3 py-1.5 rounded-xl font-bold hover:bg-red-600 hover:text-white transition-all shadow-sm text-xs flex items-center gap-1.5 whitespace-nowrap flex-shrink-0"><i className="fas fa-sign-out-alt"></i> Sair</button>
                                 </div>
                             </header>
 
-                            <div className="flex overflow-x-auto hide-scrollbar gap-3 mb-2 pb-2 w-full">
+                            <div className="flex overflow-x-auto hide-scrollbar gap-2 mb-1 pb-1 w-full">
                                 <StatCard label="Total" value={stats.total} borderColor="border-slate-200" />
                                 <StatCard label="Em Execução" value={stats.progress} borderColor="border-amber-400" textColor="text-amber-600" />
                                 <StatCard label="Pendente" value={stats.pending} borderColor="border-red-400" textColor="text-red-600" />
                                 <StatCard label="Planeamento" value={stats.planning} borderColor="border-sky-400" textColor="text-sky-600" />
                                 <StatCard label="Finalizados" value={stats.completed} borderColor="border-green-500" textColor="text-green-600" />
                                 
-                                <div className="glass-card p-3 md:p-4 rounded-2xl border-l-4 border-indigo-500 shadow-sm flex-shrink-0 min-w-[160px] lg:min-w-0 lg:flex-1">
-                                    <p className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase mb-1 tracking-wider">Eficiência</p>
+                                {/* Card Eficiência Slim */}
+                                <div className="glass-card px-3 py-2 md:px-4 md:py-2.5 rounded-xl border-l-4 border-indigo-500 shadow-sm flex-shrink-0 min-w-[140px] lg:min-w-0 lg:flex-1">
+                                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider leading-none mb-1">Eficiência</p>
                                     <div className="flex items-center gap-2">
-                                        <span className="text-lg md:text-xl font-black text-indigo-600 mt-0.5">{stats.perc}%</span>
-                                        <div className="flex-1 progress-bar-container mt-1"><div className="progress-bar-fill bg-indigo-600" style={{width: `${stats.perc}%`}}></div></div>
+                                        <span className="text-base md:text-lg font-black text-indigo-600 leading-none">{stats.perc}%</span>
+                                        <div className="flex-1 progress-bar-container"><div className="progress-bar-fill bg-indigo-600" style={{width: `${stats.perc}%`}}></div></div>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <main className="max-w-7xl mx-auto px-4 md:px-8 py-6 flex-grow w-full">
+                    <main className="max-w-7xl mx-auto px-4 md:px-8 py-4 flex-grow w-full">
                         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                             <div className="lg:col-span-8 space-y-6">
                                 {sortedProjects.map(p => (
@@ -542,7 +544,7 @@
                                         onStatus={(s) => updateStatus(p.id, s)}
                                         onToggleSub={(sId) => toggleSub(p.id, sId)}
                                         onAddHistoryNote={(sId, txt) => addHistoryNote(p.id, sId, txt)}
-                                        onEditHistoryNote={(sId, nIdx, txt) => editHistoryNote(p.id, sId, nIdx, txt)} // Passando a prop de edição
+                                        onEditHistoryNote={(sId, nIdx, txt) => editHistoryNote(p.id, sId, nIdx, txt)}
                                         onDeleteHistoryNote={(sId, nIdx) => deleteHistoryNote(p.id, sId, nIdx)}
                                         onAddSub={() => { setSubtaskData({ parentId: p.id, subId: null, title: '', note: '' }); setIsSubtaskModalOpen(true); }}
                                         onMove={(dir) => moveProject(p.id, dir)}
@@ -631,22 +633,21 @@
             );
         }
 
+        /* StatCard mais "Slim" (ajustes no padding, alinhamento e border radius) */
         function StatCard({ label, value, borderColor, textColor = "text-slate-800" }) {
             return (
-                <div className={`glass-card p-3 md:p-4 rounded-2xl shadow-sm border-l-4 flex-shrink-0 min-w-[130px] md:min-w-[150px] lg:min-w-0 lg:flex-1 ${borderColor}`}>
-                    <p className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-wider">{label}</p>
-                    <h3 className={`text-lg md:text-xl font-black mt-0.5 ${textColor}`}>{value}</h3>
+                <div className={`glass-card px-3 py-2 md:px-4 md:py-2.5 rounded-xl shadow-sm border-l-4 flex-shrink-0 min-w-[110px] md:min-w-[130px] lg:min-w-0 lg:flex-1 ${borderColor}`}>
+                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider leading-none mb-1">{label}</p>
+                    <h3 className={`text-base md:text-lg font-black leading-none ${textColor}`}>{value}</h3>
                 </div>
             );
         }
 
-        // Recebendo a prop onEditHistoryNote
         function ProjectCard({ p, isCompact, onEdit, onDelete, onStatus, onToggleSub, onAddSub, onAddHistoryNote, onEditHistoryNote, onDeleteHistoryNote, onMove }) {
             const [isManualCollapsed, setIsManualCollapsed] = useState(null);
             const [addingToSubId, setAddingToSubId] = useState(null);
             const [newNoteText, setNewNoteText] = useState("");
             
-            // ESTADOS NOVOS PARA EDIÇÃO
             const [editingNote, setEditingNote] = useState({ subId: null, idx: null });
             const [editNoteText, setEditNoteText] = useState("");
 
@@ -764,12 +765,10 @@
                                                                 </div>
                                                             ) : (
                                                                 <>
-                                                                    {/* ADICIONADO: whitespace-pre-wrap para respeitar as quebras de linha */}
                                                                     <p className="text-[11px] text-slate-600 leading-relaxed italic pr-8 whitespace-pre-wrap">"{n.text}"</p>
                                                                     <div className="flex justify-between items-center mt-2 border-t border-slate-50 pt-2">
                                                                         <span className="text-[8px] font-bold text-slate-300 uppercase tracking-widest flex items-center gap-1"><i className="far fa-clock"></i> {n.time}</span>
                                                                         
-                                                                        {/* ADICIONADO: Botão de Editar ao lado do Eliminar */}
                                                                         <div className="opacity-0 group-hover/history:opacity-100 transition-all flex gap-1">
                                                                             <button onClick={() => { setEditingNote({ subId: sub.id, idx }); setEditNoteText(n.text); }} className="text-indigo-300 hover:text-indigo-600 transition-all p-1 mr-1" title="Editar registo"><i className="fas fa-pencil-alt text-[9px]"></i></button>
                                                                             <button onClick={() => onDeleteHistoryNote(sub.id, idx)} className="text-red-200 hover:text-red-500 transition-all p-1" title="Remover registo"><i className="fas fa-trash-alt text-[9px]"></i></button>
