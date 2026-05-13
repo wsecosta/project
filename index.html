@@ -189,24 +189,36 @@
                 const priorityWeight = { 'Alta': 1, 'Média': 2, 'Baixa': 3 };
 
                 return [...projects].sort((a, b) => {
-                    const orderA = a.customOrder || 0;
-                    const orderB = b.customOrder || 0;
-                    if (orderA !== orderB) return orderA - orderB;
-
-                    const sA = statusWeight[a.status] || 99;
-                    const sB = statusWeight[b.status] || 99;
-                    if (sA !== sB) return sA - sB;
-
-                    if (a.status === 'Concluído') {
+                    // 1. Forçar os "Concluídos" para o fundo, ignorando a ordem manual
+                    const isAConcluido = a.status === 'Concluído';
+                    const isBConcluido = b.status === 'Concluído';
+                    
+                    if (isAConcluido && !isBConcluido) return 1;
+                    if (!isAConcluido && isBConcluido) return -1;
+                    
+                    // 2. Se ambos estão Concluídos, ordenar pela data de conclusão (mais recentes primeiro)
+                    if (isAConcluido && isBConcluido) {
                         const dateA = a.end ? new Date(a.end) : 0;
                         const dateB = b.end ? new Date(b.end) : 0;
                         return dateB - dateA;
                     }
 
+                    // 3. Ordem Manual (prioridade máxima para os não concluídos)
+                    const orderA = a.customOrder || 0;
+                    const orderB = b.customOrder || 0;
+                    if (orderA !== orderB) return orderA - orderB;
+
+                    // 4. Agrupamento por Status para os restantes
+                    const sA = statusWeight[a.status] || 99;
+                    const sB = statusWeight[b.status] || 99;
+                    if (sA !== sB) return sA - sB;
+
+                    // 5. Prioridade
                     const pA = priorityWeight[a.priority] || 2;
                     const pB = priorityWeight[b.priority] || 2;
                     if (pA !== pB) return pA - pB;
 
+                    // 6. Data de Criação (mais recentes primeiro)
                     const timeA = a.createdAt?.seconds || 0;
                     const timeB = b.createdAt?.seconds || 0;
                     return timeB - timeA;
@@ -408,13 +420,11 @@
                 setSubtaskData({ parentId: '', subId: null, title: '', note: '' });
             };
 
-            // Atualizado: Sincroniza o toggle da tarefa principal com todas as suas notas
             const toggleSub = async (tId, sId) => {
                 const p = projects.find(proj => proj.id === tId);
                 const newSubs = p.subtasks.map(s => {
                     if (s.id === sId) {
                         const isCompleted = !s.completed;
-                        // Forçar o estado em todas as notas da tarefa
                         const newNotes = (s.notes || []).map(n => ({ ...n, completed: isCompleted }));
                         return { 
                             ...s, 
@@ -432,7 +442,6 @@
                 });
             };
 
-            // NOVA FUNÇÃO: Toggle (flegar) diretamente na Nota de Histórico
             const toggleHistoryNote = async (projectId, subtaskId, noteIndex) => {
                 const project = projects.find(p => p.id === projectId);
                 if (!project) return;
@@ -440,10 +449,8 @@
                 const newSubtasks = project.subtasks.map(sub => {
                     if (sub.id === subtaskId) {
                         const newNotes = [...(sub.notes || [])];
-                        // Inverte o status de completado da nota
                         newNotes[noteIndex] = { ...newNotes[noteIndex], completed: !newNotes[noteIndex].completed };
                         
-                        // Recalcula o progresso da tarefa baseado nas notas finalizadas
                         const completedCount = newNotes.filter(n => n.completed).length;
                         const newProgress = newNotes.length > 0 ? Math.round((completedCount / newNotes.length) * 100) : 0;
                         
@@ -452,7 +459,6 @@
                     return sub;
                 });
 
-                // Se todas as sub-tarefas acabarem concluídas, sugerir 'Concluído'
                 const allDone = newSubtasks.length > 0 && newSubtasks.every(s => s.completed);
                 await updateDoc(doc(db, 'artifacts', appIdentifier, 'public', 'data', 'projects', projectId), { 
                     subtasks: newSubtasks,
@@ -460,7 +466,6 @@
                 });
             };
 
-            // Atualizado: Nova nota adicionada não é marcada como concluída por padrão
             const addHistoryNote = async (projectId, subtaskId, text) => {
                 if (!text.trim()) return;
                 const project = projects.find(p => p.id === projectId);
@@ -470,7 +475,6 @@
                 const newSubtasks = project.subtasks.map(sub => {
                     if (sub.id === subtaskId) {
                         const newNotes = [...(sub.notes || []), { text, time, completed: false }];
-                        // Ao adicionar uma nota não concluída, a % pode descer
                         const completedCount = newNotes.filter(n => n.completed).length;
                         const newProgress = newNotes.length > 0 ? Math.round((completedCount / newNotes.length) * 100) : 0;
                         return { ...sub, notes: newNotes, progress: newProgress, completed: newProgress === 100 };
@@ -480,7 +484,6 @@
                 await updateDoc(doc(db, 'artifacts', appIdentifier, 'public', 'data', 'projects', projectId), { subtasks: newSubtasks });
             };
 
-            // Edita a nota sem mexer no status completado
             const editHistoryNote = async (projectId, subtaskId, noteIndex, newText) => {
                 if (!newText.trim()) return;
                 const project = projects.find(p => p.id === projectId);
@@ -504,9 +507,7 @@
                     if (sub.id === subtaskId) {
                         const newNotes = [...(sub.notes || [])];
                         newNotes.splice(noteIndex, 1);
-                        // Recalcula progresso pois perdeu uma nota
                         const completedCount = newNotes.filter(n => n.completed).length;
-                        // Se apagar todas as notas, assume 0 progresso ou 100% se estava finalizado (assumiremos 0 por segurança, ou mantemos concluída)
                         const newProgress = newNotes.length > 0 ? Math.round((completedCount / newNotes.length) * 100) : (sub.completed ? 100 : 0);
                         return { ...sub, notes: newNotes, progress: newProgress, completed: newProgress === 100 };
                     }
@@ -705,7 +706,6 @@
 
             const isCollapsed = isManualCollapsed !== null ? isManualCollapsed : isCompact;
 
-            // CÁLCULO GERAL: Média da evolução de todas as tarefas baseando-se no percentual calculado internamente em cada nota
             const total = p.subtasks?.length || 0;
             const sumProgress = p.subtasks?.reduce((acc, sub) => acc + (sub.progress ?? (sub.completed ? 100 : 0)), 0) || 0;
             const progress = total > 0 ? Math.round(sumProgress / total) : (p.status === 'Concluído' ? 100 : 0);
@@ -784,7 +784,6 @@
                                     <div key={sub.id} className="bg-slate-50/50 p-4 rounded-2xl border border-transparent hover:border-slate-100 transition-all">
                                         <div className="flex items-center justify-between mb-3">
                                             <div className="flex items-center gap-3 w-full pr-4">
-                                                {/* Checkbox da tarefa altera automaticamente TODAS as notas dentro dela */}
                                                 <input type="checkbox" checked={sub.completed} onChange={() => onToggleSub(sub.id)} className="w-5 h-5 rounded-lg border-slate-300 text-indigo-600 cursor-pointer flex-shrink-0"/>
                                                 
                                                 <div className="flex-1 min-w-0">
@@ -833,7 +832,6 @@
                                                             ) : (
                                                                 <>
                                                                     <div className="flex items-start gap-2">
-                                                                        {/* Novo checkbox para a nota individual */}
                                                                         <input 
                                                                             type="checkbox" 
                                                                             checked={n.completed || false} 
