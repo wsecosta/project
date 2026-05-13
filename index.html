@@ -550,7 +550,7 @@
                                         {globalCollapse.collapsed ? 'Expandir Ativos' : 'Minimizar Ativos'}
                                     </button>
                                     
-                                    <button onClick={() => setHideCompleted(!hideCompleted)} className="bg-white border border-slate-200 text-slate-600 px-3 py-1.5 rounded-xl font-bold hover:bg-slate-50 shadow-sm text-xs flex items-center gap-1.5 whitespace-nowrap flex-shrink-0"><i className={hideCompleted ? 'fas fa-eye-slash text-indigo-500' : 'fas fa-eye'}></i> {hideCompleted ? 'Ver Todos' : 'Ocultar Concluídos'}</button>
+                                    <button onClick={() => setHideCompleted(!hideCompleted)} className="bg-white border border-slate-200 text-slate-600 px-3 py-1.5 rounded-xl font-bold hover:bg-slate-50 shadow-sm text-xs flex items-center gap-1.5 whitespace-nowrap flex-shrink-0"><i className={hideCompleted ? 'fas fa-eye-slash text-indigo-500' : 'fas fa-eye'}></i> {hideCompleted ? 'Expandir Concluidos' : 'Minimizar Concluídos'}</button>
                                     <button onClick={() => setIsTaskModalOpen(true)} className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-1.5 rounded-xl font-bold shadow-sm text-xs flex items-center gap-1.5 whitespace-nowrap flex-shrink-0"><i className="fas fa-plus"></i> Novo Projeto</button>
                                     <button onClick={handleLogout} className="bg-red-50 text-red-600 px-3 py-1.5 rounded-xl font-bold hover:bg-red-600 hover:text-white transition-all shadow-sm text-xs flex items-center gap-1.5 whitespace-nowrap flex-shrink-0"><i className="fas fa-sign-out-alt"></i> Sair</button>
                                 </div>
