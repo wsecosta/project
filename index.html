@@ -404,6 +404,35 @@
                 setSubtaskData({ parentId: '', subId: null, title: '', note: '' });
             };
 
+            // NOVA FUNÇÃO: Editar o título da Tarefa/Subtask
+            const editSubtask = async (projectId, subtaskId, newTitle) => {
+                if (!newTitle.trim()) return;
+                const project = projects.find(p => p.id === projectId);
+                if (!project) return;
+                const newSubtasks = project.subtasks.map(sub => {
+                    if (sub.id === subtaskId) {
+                        return { ...sub, title: newTitle };
+                    }
+                    return sub;
+                });
+                await updateDoc(doc(db, 'artifacts', appIdentifier, 'public', 'data', 'projects', projectId), { subtasks: newSubtasks });
+            };
+
+            // NOVA FUNÇÃO: Excluir a Tarefa/Subtask
+            const deleteSubtask = async (projectId, subtaskId) => {
+                if (!window.confirm("Remover esta tarefa e todas as suas notas permanentemente?")) return;
+                const project = projects.find(p => p.id === projectId);
+                if (!project) return;
+                
+                const newSubtasks = project.subtasks.filter(sub => sub.id !== subtaskId);
+                const allDone = newSubtasks.length > 0 && newSubtasks.every(s => s.completed);
+                
+                await updateDoc(doc(db, 'artifacts', appIdentifier, 'public', 'data', 'projects', projectId), { 
+                    subtasks: newSubtasks,
+                    status: allDone ? 'Concluído' : (project.status === 'Concluído' && newSubtasks.length > 0 ? 'Andamento' : project.status)
+                });
+            };
+
             const toggleSub = async (tId, sId) => {
                 const p = projects.find(proj => proj.id === tId);
                 const newSubs = p.subtasks.map(s => {
@@ -550,7 +579,7 @@
                                         {globalCollapse.collapsed ? 'Expandir Ativos' : 'Minimizar Ativos'}
                                     </button>
                                     
-                                    <button onClick={() => setHideCompleted(!hideCompleted)} className="bg-white border border-slate-200 text-slate-600 px-3 py-1.5 rounded-xl font-bold hover:bg-slate-50 shadow-sm text-xs flex items-center gap-1.5 whitespace-nowrap flex-shrink-0"><i className={hideCompleted ? 'fas fa-eye-slash text-indigo-500' : 'fas fa-eye'}></i> {hideCompleted ? 'Expandir Concluidos' : 'Minimizar Concluídos'}</button>
+                                    <button onClick={() => setHideCompleted(!hideCompleted)} className="bg-white border border-slate-200 text-slate-600 px-3 py-1.5 rounded-xl font-bold hover:bg-slate-50 shadow-sm text-xs flex items-center gap-1.5 whitespace-nowrap flex-shrink-0"><i className={hideCompleted ? 'fas fa-eye-slash text-indigo-500' : 'fas fa-eye'}></i> {hideCompleted ? 'Ver Todos' : 'Ocultar Concluídos'}</button>
                                     <button onClick={() => setIsTaskModalOpen(true)} className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-1.5 rounded-xl font-bold shadow-sm text-xs flex items-center gap-1.5 whitespace-nowrap flex-shrink-0"><i className="fas fa-plus"></i> Novo Projeto</button>
                                     <button onClick={handleLogout} className="bg-red-50 text-red-600 px-3 py-1.5 rounded-xl font-bold hover:bg-red-600 hover:text-white transition-all shadow-sm text-xs flex items-center gap-1.5 whitespace-nowrap flex-shrink-0"><i className="fas fa-sign-out-alt"></i> Sair</button>
                                 </div>
@@ -586,6 +615,8 @@
                                         onDelete={() => deleteProject(p.id)}
                                         onStatus={(s) => updateStatus(p.id, s)}
                                         onToggleSub={(sId) => toggleSub(p.id, sId)}
+                                        onEditSubtask={(sId, nTitle) => editSubtask(p.id, sId, nTitle)}
+                                        onDeleteSubtask={(sId) => deleteSubtask(p.id, sId)}
                                         onAddHistoryNote={(sId, txt) => addHistoryNote(p.id, sId, txt)}
                                         onEditHistoryNote={(sId, nIdx, txt) => editHistoryNote(p.id, sId, nIdx, txt)}
                                         onDeleteHistoryNote={(sId, nIdx) => deleteHistoryNote(p.id, sId, nIdx)}
@@ -685,14 +716,16 @@
             );
         }
 
-        function ProjectCard({ p, isCompact, globalCollapse, onEdit, onDelete, onStatus, onToggleSub, onAddSub, onAddHistoryNote, onEditHistoryNote, onDeleteHistoryNote, onToggleHistoryNote }) {
+        function ProjectCard({ p, isCompact, globalCollapse, onEdit, onDelete, onStatus, onToggleSub, onEditSubtask, onDeleteSubtask, onAddSub, onAddHistoryNote, onEditHistoryNote, onDeleteHistoryNote, onToggleHistoryNote }) {
             const [isCollapsed, setIsCollapsed] = useState(isCompact);
             const [addingToSubId, setAddingToSubId] = useState(null);
-            
             const [newNoteText, setNewNoteText] = useState("");
             
             const [editingNote, setEditingNote] = useState({ subId: null, idx: null });
             const [editNoteText, setEditNoteText] = useState("");
+            
+            const [editingSubId, setEditingSubId] = useState(null);
+            const [editSubTitle, setEditSubTitle] = useState("");
 
             // Sincroniza estado de colapso do botão Ocultar Concluídos
             useEffect(() => {
@@ -771,25 +804,46 @@
                             </div>
                             <div className="md:col-span-8 space-y-4">
                                 {p.subtasks?.map(sub => (
-                                    <div key={sub.id} className="bg-slate-50/50 p-4 rounded-2xl border border-transparent hover:border-slate-100 transition-all">
-                                        <div className="flex items-center justify-between mb-3">
-                                            <div className="flex items-center gap-3 w-full pr-4">
-                                                <input type="checkbox" checked={sub.completed} onChange={() => onToggleSub(sub.id)} className="w-5 h-5 rounded-lg border-slate-300 text-indigo-600 cursor-pointer flex-shrink-0"/>
-                                                
-                                                <div className="flex-1 min-w-0">
-                                                    <div className="flex justify-between items-center mb-1">
-                                                        <p className={`font-bold text-sm truncate pr-2 ${sub.completed ? 'line-through text-slate-400' : 'text-slate-700'}`}>{sub.title}</p>
-                                                        <span className="text-[10px] font-black text-indigo-500">{sub.progress ?? (sub.completed ? 100 : 0)}%</span>
-                                                    </div>
-                                                    <div className="h-1.5 w-full bg-slate-200 rounded-full overflow-hidden">
-                                                        <div className="h-full bg-indigo-500 transition-all" style={{width: `${sub.progress ?? (sub.completed ? 100 : 0)}%`}}></div>
+                                    <div key={sub.id} className="bg-slate-50/50 p-4 rounded-2xl border border-transparent hover:border-slate-100 transition-all group/task relative">
+                                        
+                                        {editingSubId === sub.id ? (
+                                            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mb-3 animate-slide bg-white p-3 rounded-xl border border-indigo-100 shadow-sm">
+                                                <input type="checkbox" disabled checked={sub.completed} className="w-5 h-5 rounded-lg border-slate-300 text-slate-300 cursor-not-allowed flex-shrink-0"/>
+                                                <div className="flex-1 w-full flex flex-col sm:flex-row gap-2">
+                                                    <input type="text" className="w-full p-2 bg-slate-50 border border-indigo-200 rounded-lg text-sm font-bold outline-none focus:ring-2 focus:ring-indigo-500" value={editSubTitle} onChange={e => setEditSubTitle(e.target.value)} autoFocus />
+                                                    <div className="flex justify-end gap-2 flex-shrink-0">
+                                                        <button onClick={() => setEditingSubId(null)} className="text-slate-400 text-[10px] px-3 py-2 rounded-lg hover:bg-slate-100 transition-all font-bold">Cancelar</button>
+                                                        <button onClick={() => { onEditSubtask(sub.id, editSubTitle); setEditingSubId(null); }} className="bg-indigo-600 text-white text-[10px] px-3 py-2 rounded-lg font-bold shadow-sm hover:bg-indigo-700 transition-all">Salvar</button>
                                                     </div>
                                                 </div>
                                             </div>
-                                            <button onClick={() => {
-                                                setAddingToSubId(addingToSubId === sub.id ? null : sub.id);
-                                            }} className={`text-[10px] flex-shrink-0 font-bold px-3 py-1 rounded-lg transition-all flex items-center gap-2 ${addingToSubId === sub.id ? 'bg-indigo-600 text-white' : 'bg-white text-indigo-600 border border-indigo-100 hover:bg-indigo-50'}`}><i className="fas fa-plus"></i> {addingToSubId === sub.id ? 'Cancelar' : 'Nova Etapa'}</button>
-                                        </div>
+                                        ) : (
+                                            <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-3 gap-3">
+                                                <div className="flex items-center gap-3 w-full sm:w-auto flex-1 pr-0 sm:pr-4">
+                                                    <input type="checkbox" checked={sub.completed} onChange={() => onToggleSub(sub.id)} className="w-5 h-5 rounded-lg border-slate-300 text-indigo-600 cursor-pointer flex-shrink-0"/>
+                                                    
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className="flex justify-between items-center mb-1">
+                                                            <p className={`font-bold text-sm truncate pr-2 ${sub.completed ? 'line-through text-slate-400' : 'text-slate-700'}`}>{sub.title}</p>
+                                                            <span className="text-[10px] font-black text-indigo-500">{sub.progress ?? (sub.completed ? 100 : 0)}%</span>
+                                                        </div>
+                                                        <div className="h-1.5 w-full bg-slate-200 rounded-full overflow-hidden">
+                                                            <div className="h-full bg-indigo-500 transition-all" style={{width: `${sub.progress ?? (sub.completed ? 100 : 0)}%`}}></div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                
+                                                <div className="flex items-center justify-end gap-2 flex-shrink-0">
+                                                    <div className="opacity-0 group-hover/task:opacity-100 transition-all flex gap-1 mr-1">
+                                                        <button onClick={() => { setEditingSubId(sub.id); setEditSubTitle(sub.title); }} className="text-indigo-300 hover:text-indigo-600 transition-all px-1.5 py-1" title="Editar Tarefa"><i className="fas fa-pencil-alt text-[11px]"></i></button>
+                                                        <button onClick={() => onDeleteSubtask(sub.id)} className="text-red-200 hover:text-red-500 transition-all px-1.5 py-1" title="Excluir Tarefa e Histórico"><i className="fas fa-trash-alt text-[11px]"></i></button>
+                                                    </div>
+                                                    <button onClick={() => {
+                                                        setAddingToSubId(addingToSubId === sub.id ? null : sub.id);
+                                                    }} className={`text-[10px] flex-shrink-0 font-bold px-3 py-1.5 rounded-lg transition-all flex items-center gap-2 ${addingToSubId === sub.id ? 'bg-indigo-600 text-white' : 'bg-white text-indigo-600 border border-indigo-100 hover:bg-indigo-50'}`}><i className="fas fa-plus"></i> {addingToSubId === sub.id ? 'Cancelar' : 'Nova Etapa'}</button>
+                                                </div>
+                                            </div>
+                                        )}
 
                                         {addingToSubId === sub.id && (
                                             <div className="mb-4 animate-slide bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
