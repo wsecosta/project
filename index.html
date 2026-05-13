@@ -164,7 +164,6 @@
             const [isScrolled, setIsScrolled] = useState(false);
             
             const [hideCompleted, setHideCompleted] = useState(false);
-            // NOVO ESTADO: Controlo de Minimizar/Expandir todos os não concluídos
             const [globalCollapse, setGlobalCollapse] = useState({ collapsed: false, count: 0 });
 
             const [email, setEmail] = useState('');
@@ -192,36 +191,30 @@
                 const priorityWeight = { 'Alta': 1, 'Média': 2, 'Baixa': 3 };
 
                 return [...projects].sort((a, b) => {
-                    // 1. Forçar os "Concluídos" para o fundo, ignorando a ordem manual
                     const isAConcluido = a.status === 'Concluído';
                     const isBConcluido = b.status === 'Concluído';
                     
                     if (isAConcluido && !isBConcluido) return 1;
                     if (!isAConcluido && isBConcluido) return -1;
                     
-                    // 2. Se ambos estão Concluídos, ordenar pela data de conclusão (mais recentes primeiro)
                     if (isAConcluido && isBConcluido) {
                         const dateA = a.end ? new Date(a.end) : 0;
                         const dateB = b.end ? new Date(b.end) : 0;
                         return dateB - dateA;
                     }
 
-                    // 3. Ordem Manual (prioridade máxima para os não concluídos)
                     const orderA = a.customOrder || 0;
                     const orderB = b.customOrder || 0;
                     if (orderA !== orderB) return orderA - orderB;
 
-                    // 4. Agrupamento por Status para os restantes
                     const sA = statusWeight[a.status] || 99;
                     const sB = statusWeight[b.status] || 99;
                     if (sA !== sB) return sA - sB;
 
-                    // 5. Prioridade
                     const pA = priorityWeight[a.priority] || 2;
                     const pB = priorityWeight[b.priority] || 2;
                     if (pA !== pB) return pA - pB;
 
-                    // 6. Data de Criação (mais recentes primeiro)
                     const timeA = a.createdAt?.seconds || 0;
                     const timeB = b.createdAt?.seconds || 0;
                     return timeB - timeA;
@@ -564,7 +557,6 @@
                                 <div className="flex overflow-x-auto hide-scrollbar gap-2 w-full md:w-auto pb-1">
                                     <button onClick={exportBackup} className="bg-emerald-50 border border-emerald-200 text-emerald-700 px-3 py-1.5 rounded-xl font-bold hover:bg-emerald-100 shadow-sm text-xs flex items-center gap-1.5 transition-all whitespace-nowrap flex-shrink-0"><i className="fas fa-file-download"></i> Exportar Backup</button>
                                     
-                                    {/* NOVO BOTÃO: Minimizar/Expandir Ativos */}
                                     <button onClick={() => setGlobalCollapse(prev => ({ collapsed: !prev.collapsed, count: prev.count + 1 }))} className="bg-white border border-slate-200 text-slate-600 px-3 py-1.5 rounded-xl font-bold hover:bg-slate-50 shadow-sm text-xs flex items-center gap-1.5 whitespace-nowrap flex-shrink-0">
                                         <i className={globalCollapse.collapsed ? 'fas fa-expand text-indigo-500' : 'fas fa-compress'}></i> 
                                         {globalCollapse.collapsed ? 'Expandir Ativos' : 'Minimizar Ativos'}
@@ -601,7 +593,7 @@
                                     <ProjectCard 
                                         key={p.id} p={p} 
                                         isCompact={hideCompleted && p.status === 'Concluído'}
-                                        globalCollapse={globalCollapse} // Propagando estado global
+                                        globalCollapse={globalCollapse} 
                                         onEdit={() => openEditTask(p)}
                                         onDelete={() => deleteProject(p.id)}
                                         onStatus={(s) => updateStatus(p.id, s)}
@@ -707,7 +699,7 @@
         }
 
         function ProjectCard({ p, isCompact, globalCollapse, onEdit, onDelete, onStatus, onToggleSub, onAddSub, onAddHistoryNote, onEditHistoryNote, onDeleteHistoryNote, onToggleHistoryNote, onMove }) {
-            const [isManualCollapsed, setIsManualCollapsed] = useState(null);
+            const [isCollapsed, setIsCollapsed] = useState(isCompact);
             const [addingToSubId, setAddingToSubId] = useState(null);
             
             const [newNoteText, setNewNoteText] = useState("");
@@ -715,14 +707,17 @@
             const [editingNote, setEditingNote] = useState({ subId: null, idx: null });
             const [editNoteText, setEditNoteText] = useState("");
 
-            // Reage ao botão global de colapsar/expandir
+            // Sincroniza estado de colapso do botão Ocultar Concluídos
+            useEffect(() => {
+                setIsCollapsed(isCompact);
+            }, [isCompact]);
+
+            // Reage ao botão global de colapsar/expandir ativos
             useEffect(() => {
                 if (globalCollapse && globalCollapse.count > 0 && p.status !== 'Concluído') {
-                    setIsManualCollapsed(globalCollapse.collapsed);
+                    setIsCollapsed(globalCollapse.collapsed);
                 }
             }, [globalCollapse.count]);
-
-            const isCollapsed = isManualCollapsed !== null ? isManualCollapsed : isCompact;
 
             const total = p.subtasks?.length || 0;
             const sumProgress = p.subtasks?.reduce((acc, sub) => acc + (sub.progress ?? (sub.completed ? 100 : 0)), 0) || 0;
@@ -778,7 +773,7 @@
                             </div>
                         </div>
                         <div className="flex items-start gap-2">
-                            <button onClick={() => setIsManualCollapsed(!isCollapsed)} title={isCollapsed ? "Expandir" : "Minimizar"} className={`p-3 rounded-xl transition-all shadow-sm ${isCollapsed ? 'bg-amber-50 text-amber-600 hover:bg-amber-600 hover:text-white' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}><i className={`fas ${isCollapsed ? 'fa-plus' : 'fa-minus'}`}></i></button>
+                            <button onClick={() => setIsCollapsed(!isCollapsed)} title={isCollapsed ? "Expandir" : "Minimizar"} className={`p-3 rounded-xl transition-all shadow-sm ${isCollapsed ? 'bg-amber-50 text-amber-600 hover:bg-amber-600 hover:text-white' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}><i className={`fas ${isCollapsed ? 'fa-plus' : 'fa-minus'}`}></i></button>
                             {!isCollapsed && <button onClick={onAddSub} title="Adicionar Tarefa" className="p-3 bg-indigo-50 text-indigo-600 rounded-xl hover:bg-indigo-600 hover:text-white transition-all shadow-sm"><i className="fas fa-plus"></i></button>}
                             <button onClick={() => onDelete(p.id)} title="Eliminar Projeto" className="p-3 bg-red-50 text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition-all shadow-sm"><i className="fas fa-trash-alt"></i></button>
                         </div>
