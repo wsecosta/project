@@ -728,15 +728,15 @@
                             <div className="absolute top-0 left-0 w-full h-2 bg-indigo-600"></div>
                             <div className="bg-indigo-50 w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-6 text-indigo-600 text-3xl shadow-sm"><i className="fas fa-shield-halved"></i></div>
                             <h2 className="text-3xl font-black text-slate-900 mb-2">Portal IDW</h2>
-                            <p className="text-slate-400 font-bold text-xs uppercase tracking-[0.2em] mb-10">Autenticação Segura Cloud</p>
+                            <p className="text-slate-400 font-bold text-xs uppercase tracking-[0.2em] mb-10">Autenticação Segura - ANSR - IDW</p>
                             <form onSubmit={handleLogin} className="space-y-4">
                                 <div className="relative group">
                                     <i className="fas fa-envelope absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500 transition-colors"></i>
-                                    <input type="email" required value={email} onChange={e => setEmail(e.target.value)} className="w-full p-4 pl-12 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-4 focus:ring-indigo-500/10 focus:bg-white transition-all font-medium" placeholder="E-mail funcional"/>
+                                    <input type="email" required value={email} onChange={e => setEmail(e.target.value)} className="w-full p-4 pl-12 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-4 focus:ring-indigo-500/10 focus:bg-white transition-all font-medium" placeholder="exemplo@ansr.pt"/>
                                 </div>
                                 <div className="relative group">
                                     <i className="fas fa-key absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500 transition-colors"></i>
-                                    <input type="password" required value={password} onChange={e => setPassword(e.target.value)} className="w-full p-4 pl-12 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-4 focus:ring-indigo-500/10 focus:bg-white transition-all font-medium" placeholder="Palavra-passe"/>
+                                    <input type="password" required value={password} onChange={e => setPassword(e.target.value)} className="w-full p-4 pl-12 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-4 focus:ring-indigo-500/10 focus:bg-white transition-all font-medium" placeholder="********"/>
                                 </div>
                                 {loginError && <p className="text-rose-500 text-[10px] font-black bg-rose-50 p-3 rounded-xl uppercase tracking-wider">{loginError}</p>}
                                 <button type="submit" disabled={isLoggingIn} className="w-full btn-premium btn-primary py-5 rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl mt-4">
