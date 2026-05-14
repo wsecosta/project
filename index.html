@@ -20,7 +20,6 @@
             --primary-dark: #4f46e5;
             --bg-main: #fcfdfe;
             --card-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.04), 0 4px 6px -2px rgba(0, 0, 0, 0.02);
-            --accent-glow: 0 0 20px rgba(99, 102, 241, 0.1);
         }
 
         body {
@@ -57,7 +56,6 @@
             font-weight: 800;
             letter-spacing: 0.025em;
             text-transform: uppercase;
-            box-shadow: inset 0 -1px 0 rgba(0,0,0,0.1);
         }
 
         .status-Pendente { background: #fee2e2; color: #ef4444; border: 1px solid #fecaca; }
@@ -70,7 +68,6 @@
             background: #f1f5f9;
             border-radius: 20px;
             overflow: hidden;
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
         }
 
         .progress-bar-fill {
@@ -88,14 +85,7 @@
             backdrop-filter: blur(16px);
             padding-top: 1rem; 
             padding-bottom: 0.75rem; 
-            border-bottom: 1px solid transparent;
-            transition: all 0.3s ease;
-        }
-
-        .scrolled-header {
-            border-bottom-color: #f1f5f9;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.03);
-            background-color: rgba(255, 255, 255, 0.95);
+            border-bottom: 1px solid #f1f5f9;
         }
 
         @keyframes slideUp {
@@ -103,19 +93,6 @@
             to { transform: translateY(0); opacity: 1; }
         }
         .animate-slide { animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
-
-        .login-bg {
-            background: radial-gradient(circle at top left, #6366f1, #4f46e5);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .login-bg::after {
-            content: '';
-            position: absolute;
-            width: 100%; height: 100%;
-            background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
-        }
 
         .btn-vibrant {
             background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
@@ -125,6 +102,14 @@
         .btn-vibrant:hover {
             box-shadow: 0 8px 20px rgba(79, 70, 229, 0.3);
             transform: scale(1.02);
+        }
+
+        .search-highlight {
+            background-color: #fef08a;
+            color: #854d0e;
+            padding: 1px 3px;
+            border-radius: 4px;
+            font-weight: 700;
         }
 
         .note-input {
@@ -144,23 +129,6 @@
             border-color: var(--primary);
             box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
         }
-
-        .search-highlight {
-            background-color: #fef08a;
-            color: #854d0e;
-            padding: 1px 3px;
-            border-radius: 4px;
-            font-weight: 700;
-        }
-
-        .input-elegant {
-            transition: all 0.2s ease;
-            border: 1px solid #e2e8f0;
-        }
-        .input-elegant:focus {
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
-        }
     </style>
 </head>
 <body>
@@ -168,25 +136,8 @@
 
     <script type="text/babel" data-type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { 
-            getAuth, 
-            signInWithEmailAndPassword, 
-            onAuthStateChanged, 
-            signOut,
-            setPersistence,
-            browserSessionPersistence 
-        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { 
-            getFirestore, 
-            collection, 
-            doc, 
-            setDoc,
-            onSnapshot, 
-            addDoc, 
-            updateDoc, 
-            deleteDoc, 
-            serverTimestamp 
-        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, setPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, doc, setDoc, onSnapshot, addDoc, updateDoc, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         const { useState, useEffect, useRef, useMemo } = React;
 
@@ -203,7 +154,6 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
-
         const DB_COLLECTION = 'projects';
 
         function HighlightedText({ text, term }) {
@@ -226,8 +176,10 @@
             const [loading, setLoading] = useState(true);
             const [authLoading, setAuthLoading] = useState(true);
             const [isScrolled, setIsScrolled] = useState(false);
+            
             const [hideCompleted, setHideCompleted] = useState(false);
             const [globalCollapse, setGlobalCollapse] = useState({ collapsed: false, count: 0 });
+            
             const [searchTerm, setSearchTerm] = useState('');
             const [email, setEmail] = useState('');
             const [password, setPassword] = useState('');
@@ -244,63 +196,6 @@
             const [taskData, setTaskData] = useState({ title: '', start: '', end: '', priority: 'Média', owner: '', team: '', company: '' });
             const [subtaskData, setSubtaskData] = useState({ parentId: '', subId: null, title: '', note: '' });
 
-            const sortedProjects = useMemo(() => {
-                const statusWeight = { 'Andamento': 1, 'Pendente': 2, 'Planeamento': 3, 'Concluído': 4 };
-                const priorityWeight = { 'Alta': 1, 'Média': 2, 'Baixa': 3 };
-                return [...projects].sort((a, b) => {
-                    const isAConcluido = a.status === 'Concluído';
-                    const isBConcluido = b.status === 'Concluído';
-                    if (isAConcluido && !isBConcluido) return 1;
-                    if (!isAConcluido && isBConcluido) return -1;
-                    if (isAConcluido && isBConcluido) {
-                        const dateA = a.end ? new Date(a.end) : 0;
-                        const dateB = b.end ? new Date(b.end) : 0;
-                        return dateB - dateA;
-                    }
-                    const sA = statusWeight[a.status] || 99;
-                    const sB = statusWeight[b.status] || 99;
-                    if (sA !== sB) return sA - sB;
-                    const pA = priorityWeight[a.priority] || 2;
-                    const pB = priorityWeight[b.priority] || 2;
-                    if (pA !== pB) return pA - pB;
-                    const timeA = a.createdAt?.seconds || 0;
-                    const timeB = b.createdAt?.seconds || 0;
-                    return timeB - timeA;
-                });
-            }, [projects]);
-
-            const filteredProjects = useMemo(() => {
-                if (!searchTerm.trim()) return sortedProjects;
-                const term = searchTerm.toLowerCase();
-
-                return sortedProjects.filter(p => {
-                    const projectMatch = 
-                        p.title.toLowerCase().includes(term) ||
-                        (p.owner && p.owner.toLowerCase().includes(term)) ||
-                        (p.team && p.team.toLowerCase().includes(term)) ||
-                        (p.company && p.company.toLowerCase().includes(term));
-                    
-                    if (projectMatch) return true;
-
-                    if (p.subtasks && Array.isArray(p.subtasks)) {
-                        return p.subtasks.some(sub => {
-                            if (sub.title.toLowerCase().includes(term)) return true;
-                            if (sub.notes && Array.isArray(sub.notes)) {
-                                return sub.notes.some(note => note.text.toLowerCase().includes(term));
-                            }
-                            return false;
-                        });
-                    }
-                    return false;
-                });
-            }, [sortedProjects, searchTerm]);
-
-            useEffect(() => {
-                const handleScroll = () => setIsScrolled(window.scrollY > 10);
-                window.addEventListener('scroll', handleScroll);
-                return () => window.removeEventListener('scroll', handleScroll);
-            }, []);
-
             useEffect(() => {
                 const unsubscribe = onAuthStateChanged(auth, (u) => {
                     setUser(u);
@@ -311,386 +206,149 @@
 
             useEffect(() => {
                 if (!user) return;
-                const colRef = collection(db, DB_COLLECTION);
-                const unsubscribe = onSnapshot(colRef, (snapshot) => {
-                    const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                    setProjects(data);
-                    setLoading(false);
-                }, (error) => {
-                    console.error("Firestore Error:", error);
+                const unsubscribe = onSnapshot(collection(db, DB_COLLECTION), (snapshot) => {
+                    setProjects(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
                     setLoading(false);
                 });
                 return () => unsubscribe();
             }, [user]);
 
-            useEffect(() => {
-                if (loading || !chartRef.current || projects.length === 0 || !user) return;
-                const a = projects.filter(proj => proj.status === 'Andamento').length;
-                const p = projects.filter(proj => proj.status === 'Pendente').length;
-                const pl = projects.filter(proj => proj.status === 'Planeamento').length;
-                const c = projects.filter(proj => proj.status === 'Concluído').length;
-                if (chartInstance.current) chartInstance.current.destroy();
-                const ctx = chartRef.current.getContext('2d');
-                chartInstance.current = new Chart(ctx, {
-                    type: 'doughnut',
-                    data: {
-                        labels: ['Em Execução', 'Pendente', 'Planeamento', 'Finalizados'],
-                        datasets: [{ 
-                            data: [a, p, pl, c], 
-                            backgroundColor: ['#fbbf24', '#f87171', '#60a5fa', '#34d399'], 
-                            hoverBackgroundColor: ['#f59e0b', '#ef4444', '#3b82f6', '#10b981'],
-                            borderWidth: 0,
-                            hoverOffset: 10
-                        }]
-                    },
-                    options: { 
-                        responsive: true, 
-                        maintainAspectRatio: false, 
-                        cutout: '78%', 
-                        plugins: { 
-                            legend: { 
-                                position: 'bottom',
-                                labels: { usePointStyle: true, padding: 20, font: { weight: '600', family: 'Inter', size: 10 } }
-                            } 
-                        } 
-                    }
+            const filteredProjects = useMemo(() => {
+                let result = [...projects].sort((a, b) => {
+                    const statusWeight = { 'Andamento': 1, 'Pendente': 2, 'Planeamento': 3, 'Concluído': 4 };
+                    return (statusWeight[a.status] || 99) - (statusWeight[b.status] || 99);
                 });
-            }, [projects, loading, user]);
+
+                if (searchTerm.trim()) {
+                    const term = searchTerm.toLowerCase();
+                    result = result.filter(p => 
+                        p.title.toLowerCase().includes(term) ||
+                        p.owner?.toLowerCase().includes(term) ||
+                        p.subtasks?.some(s => s.title.toLowerCase().includes(term))
+                    );
+                }
+                return result;
+            }, [projects, searchTerm]);
 
             const handleLogin = async (e) => {
                 e.preventDefault();
-                setLoginError(null);
                 setIsLoggingIn(true);
                 try {
                     await setPersistence(auth, browserSessionPersistence);
                     await signInWithEmailAndPassword(auth, email, password);
-                } catch (err) {
-                    setLoginError("Credenciais inválidas ou sem acesso ao projeto.");
-                } finally {
-                    setIsLoggingIn(false);
-                }
+                } catch (err) { setLoginError("Credenciais inválidas."); }
+                finally { setIsLoggingIn(false); }
             };
 
-            const handleLogout = async () => {
-                if (window.confirm("Deseja encerrar a sessão com segurança?")) {
-                    try { await signOut(auth); setUser(null); setEmail(''); setPassword(''); } 
-                    catch (err) { console.error("Erro ao sair:", err); }
-                }
-            };
-
-            const exportBackup = () => {
-                try {
-                    const dataStr = JSON.stringify(projects, null, 2);
-                    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
-                    const exportFileDefaultName = `backup_ansr_${new Date().toISOString().split('T')[0]}.json`;
-                    const linkElement = document.createElement('a');
-                    linkElement.setAttribute('href', dataUri);
-                    linkElement.setAttribute('download', exportFileDefaultName);
-                    linkElement.click();
-                } catch (error) { console.error("Erro backup:", error); }
-            };
-
-            const importBackup = async (e) => {
-                const file = e.target.files[0];
-                if (!file || !user) return;
-                const reader = new FileReader();
-                reader.onload = async (event) => {
-                    try {
-                        const importedData = JSON.parse(event.target.result);
-                        if (!Array.isArray(importedData)) throw new Error("Formato inválido.");
-                        if (!window.confirm(`Importar ${importedData.length} projetos?`)) { e.target.value = null; return; }
-                        for (const proj of importedData) {
-                            const { id, ...projectData } = proj;
-                            await setDoc(doc(db, DB_COLLECTION, id || Date.now().toString()), projectData);
-                        }
-                    } catch (error) { alert("Erro ao importar ficheiro."); }
-                    e.target.value = null;
-                };
-                reader.readAsText(file);
-            };
-
-            const saveProject = async (e) => {
-                e.preventDefault();
-                if (!user) return;
-                try {
-                    if (editingId) await updateDoc(doc(db, DB_COLLECTION, editingId), taskData);
-                    else await addDoc(collection(db, DB_COLLECTION), { ...taskData, status: 'Pendente', subtasks: [], createdAt: serverTimestamp(), createdBy: user.uid });
-                    closeTaskModal();
-                } catch (err) { alert("Erro ao salvar dados."); }
-            };
-
-            const deleteProject = async (id) => {
-                if (!user || !window.confirm("Eliminar projeto permanentemente?")) return;
-                try { await deleteDoc(doc(db, DB_COLLECTION, id)); } catch(err) { alert("Erro ao eliminar."); }
-            };
-
-            const updateStatus = async (id, newStatus) => {
-                if (!user) return;
-                try { await updateDoc(doc(db, DB_COLLECTION, id), { status: newStatus }); } catch(err) { alert("Erro ao atualizar."); }
-            };
-
-            const saveSubtask = async (e) => {
-                e.preventDefault();
-                if (!user) return;
-                const p = projects.find(proj => proj.id === subtaskData.parentId);
-                if (!p) return;
-                let newSubs = [...(p.subtasks || [])];
-                const time = new Date().toLocaleString('pt-PT', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
-                newSubs.push({ id: Date.now().toString(), title: subtaskData.title, completed: false, progress: 0, notes: subtaskData.note.trim() ? [{ text: subtaskData.note, time, completed: false }] : [] });
-                try {
-                    await updateDoc(doc(db, DB_COLLECTION, p.id), { subtasks: newSubs, status: p.status === 'Pendente' || p.status === 'Planeamento' ? 'Andamento' : p.status });
-                    setIsSubtaskModalOpen(false);
-                    setSubtaskData({ parentId: '', subId: null, title: '', note: '' });
-                } catch(err) { alert("Erro ao adicionar tarefa."); }
-            };
-
-            const toggleSub = async (tId, sId) => {
-                const p = projects.find(proj => proj.id === tId);
-                const newSubs = p.subtasks.map(s => {
-                    if (s.id === sId) {
-                        const isCompleted = !s.completed;
-                        return { ...s, completed: isCompleted, notes: (s.notes || []).map(n => ({ ...n, completed: isCompleted })), progress: isCompleted ? 100 : 0 };
-                    }
-                    return s;
-                });
-                const allDone = newSubs.length > 0 && newSubs.every(s => s.completed);
-                try { await updateDoc(doc(db, DB_COLLECTION, tId), { subtasks: newSubs, status: allDone ? 'Concluído' : (p.status === 'Concluído' ? 'Andamento' : p.status) });
-                } catch(err) { console.error(err); }
-            };
-
-            const addHistoryNote = async (projectId, subtaskId, text) => {
-                if (!text.trim()) return;
-                const project = projects.find(p => p.id === projectId);
-                const time = new Date().toLocaleString('pt-PT', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
-                const newSubtasks = project.subtasks.map(sub => {
-                    if (sub.id === subtaskId) {
-                        const newNotes = [...(sub.notes || []), { text, time, completed: false }];
-                        const completedCount = newNotes.filter(n => n.completed).length;
-                        return { ...sub, notes: newNotes, progress: Math.round((completedCount / newNotes.length) * 100) };
-                    }
-                    return sub;
-                });
-                try { await updateDoc(doc(db, DB_COLLECTION, projectId), { subtasks: newSubtasks }); } catch(err) { console.error(err); }
-            };
-
-            const toggleHistoryNote = async (projectId, subtaskId, noteIndex) => {
-                const project = projects.find(p => p.id === projectId);
-                const newSubtasks = project.subtasks.map(sub => {
-                    if (sub.id === subtaskId) {
-                        const newNotes = [...(sub.notes || [])];
-                        newNotes[noteIndex] = { ...newNotes[noteIndex], completed: !newNotes[noteIndex].completed };
-                        const completedCount = newNotes.filter(n => n.completed).length;
-                        const newProgress = Math.round((completedCount / newNotes.length) * 100);
-                        return { ...sub, notes: newNotes, progress: newProgress, completed: newProgress === 100 };
-                    }
-                    return sub;
-                });
-                try { await updateDoc(doc(db, DB_COLLECTION, projectId), { subtasks: newSubtasks }); } catch(err) { console.error(err); }
-            };
-
-            const deleteHistoryNote = async (projectId, subtaskId, noteIndex) => {
-                if (!window.confirm("Remover registo?")) return;
-                const project = projects.find(p => p.id === projectId);
-                const newSubtasks = project.subtasks.map(sub => {
-                    if (sub.id === subtaskId) {
-                        const newNotes = [...(sub.notes || [])];
-                        newNotes.splice(noteIndex, 1);
-                        const completedCount = newNotes.filter(n => n.completed).length;
-                        const newProgress = newNotes.length > 0 ? Math.round((completedCount / newNotes.length) * 100) : (sub.completed ? 100 : 0);
-                        return { ...sub, notes: newNotes, progress: newProgress, completed: newProgress === 100 };
-                    }
-                    return sub;
-                });
-                try { await updateDoc(doc(db, DB_COLLECTION, projectId), { subtasks: newSubtasks }); } catch(err) { console.error(err); }
-            };
-
-            const stats = {
-                total: projects.length,
-                pending: projects.filter(p => p.status === 'Pendente').length,
-                progress: projects.filter(p => p.status === 'Andamento').length,
-                planning: projects.filter(p => p.status === 'Planeamento').length,
-                completed: projects.filter(p => p.status === 'Concluído').length,
-                perc: projects.length ? Math.round((projects.filter(p => p.status === 'Concluído').length / projects.length) * 100) : 0
-            };
-
-            const closeTaskModal = () => {
-                setIsTaskModalOpen(false);
-                setEditingId(null);
-                setTaskData({ title: '', start: '', end: '', priority: 'Média', owner: '', team: '', company: '' });
-            };
-
-            if (authLoading) return <div className="h-screen flex flex-col items-center justify-center bg-slate-950 text-white font-bold tracking-widest uppercase gap-4"><div className="w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>Acessando Ambiente Cloud...</div>;
+            if (authLoading) return <div className="h-screen flex items-center justify-center bg-slate-900 text-white font-black uppercase tracking-widest">Acessando Cloud...</div>;
 
             if (!user) {
                 return (
-                    <div className="min-h-screen login-bg flex items-center justify-center p-4">
-                        <div className="bg-white p-10 rounded-[2.5rem] shadow-2xl w-full max-w-md animate-slide text-center relative z-10">
-                            <div className="bg-indigo-600 w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-6 text-white text-3xl shadow-lg shadow-indigo-200"><i className="fas fa-project-diagram"></i></div>
-                            <h2 className="text-3xl font-black text-slate-900 tracking-tight">Sistema IDW</h2>
-                            <p className="text-slate-500 text-sm mb-10 font-medium">Gestão de Projetos Corporativos</p>
-                            <form onSubmit={handleLogin} className="space-y-5">
-                                <input type="email" required value={email} onChange={e => setEmail(e.target.value)} className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50 transition-all" placeholder="E-mail de acesso"/>
-                                <input type="password" required value={password} onChange={e => setPassword(e.target.value)} className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50 transition-all" placeholder="Senha"/>
-                                {loginError && <p className="text-red-500 text-xs font-bold bg-red-50 p-3 rounded-xl">{loginError}</p>}
-                                <button type="submit" disabled={isLoggingIn} className="w-full btn-vibrant text-white py-4 rounded-2xl font-black text-sm uppercase tracking-widest">
-                                    {isLoggingIn ? 'Autenticando...' : 'Entrar no Dashboard'}
-                                </button>
+                    <div className="min-h-screen flex items-center justify-center bg-indigo-600 p-4">
+                        <div className="bg-white p-10 rounded-[2.5rem] shadow-2xl w-full max-w-md animate-slide text-center">
+                            <h2 className="text-3xl font-black text-slate-900 mb-2">Sistema IDW</h2>
+                            <p className="text-slate-500 text-sm mb-8 font-medium">Gestão de Projetos</p>
+                            <form onSubmit={handleLogin} className="space-y-4 text-left">
+                                <input type="email" required value={email} onChange={e => setEmail(e.target.value)} className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none" placeholder="E-mail"/>
+                                <input type="password" required value={password} onChange={e => setPassword(e.target.value)} className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none" placeholder="Senha"/>
+                                {loginError && <p className="text-red-500 text-xs font-bold">{loginError}</p>}
+                                <button type="submit" disabled={isLoggingIn} className="w-full btn-vibrant text-white py-4 rounded-2xl font-black uppercase tracking-widest">Entrar</button>
                             </form>
-                            <p className="mt-10 text-[10px] text-slate-400 font-bold tracking-widest uppercase">© 2026 Wilson Costa • IDW Premium</p>
                         </div>
                     </div>
                 );
             }
 
             return (
-                <div className="bg-slate-50 min-h-screen text-slate-900 flex flex-col">
-                    <div className={`sticky-header-container px-4 md:px-8 ${isScrolled ? 'scrolled-header' : ''}`}>
+                <div className="bg-slate-50 min-h-screen flex flex-col">
+                    <div className="sticky-header-container px-4 md:px-8">
                         <div className="max-w-7xl mx-auto">
                             <header className="flex flex-col xl:flex-row justify-between items-start xl:items-center mb-4 gap-4">
                                 <div>
-                                    <h1 className="text-3xl font-black text-slate-950 tracking-tighter">Projetos <span className="text-indigo-600">IDW</span></h1>
-                                    <p className="text-slate-500 font-bold text-[10px] uppercase tracking-widest opacity-80 mt-1">Ambiente Cloud Ativo • <span className="text-indigo-600">{user.email}</span></p>
+                                    <h1 className="text-2xl font-black text-slate-950 tracking-tighter">Projetos <span className="text-indigo-600">IDW</span></h1>
+                                    <p className="text-slate-500 font-bold text-[10px] uppercase tracking-widest">{user.email}</p>
                                 </div>
                                 
-                                <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3 w-full xl:w-auto">
-                                    <div className="relative flex-grow max-w-lg">
-                                        <i className="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
-                                        <input 
-                                            type="text" 
-                                            placeholder="Procurar projeto, tarefa ou histórico..." 
-                                            value={searchTerm} 
-                                            onChange={(e) => setSearchTerm(e.target.value)}
-                                            className="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-2xl text-xs outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-400 transition-all shadow-sm"
-                                        />
+                                <div className="flex flex-wrap items-center gap-3 w-full xl:w-auto">
+                                    <div className="relative flex-grow max-w-md">
+                                        <i className="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                                        <input type="text" placeholder="Pesquisar..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-2xl text-xs outline-none focus:ring-4 focus:ring-indigo-50 shadow-sm"/>
                                     </div>
-                                    <div className="flex gap-2 overflow-x-auto hide-scrollbar pb-1">
-                                        <button onClick={exportBackup} className="bg-white text-slate-700 px-4 py-3 rounded-2xl font-bold hover:bg-slate-50 text-[11px] flex items-center gap-2 flex-shrink-0 border border-slate-200"><i className="fas fa-download text-emerald-500"></i> Backup</button>
-                                        <button onClick={() => fileInputRef.current.click()} className="bg-white text-slate-700 px-4 py-3 rounded-2xl font-bold hover:bg-slate-50 text-[11px] flex items-center gap-2 flex-shrink-0 border border-slate-200"><i className="fas fa-upload text-blue-500"></i> Importar</button>
-                                        <input type="file" ref={fileInputRef} onChange={importBackup} accept=".json" className="hidden" />
-                                        <button onClick={() => setIsTaskModalOpen(true)} className="btn-vibrant text-white px-6 py-3 rounded-2xl font-black text-[11px] flex items-center gap-2 flex-shrink-0 uppercase tracking-widest"><i className="fas fa-plus"></i> Novo</button>
-                                        <button onClick={handleLogout} className="bg-red-50 text-red-600 px-4 py-3 rounded-2xl font-bold hover:bg-red-600 hover:text-white text-[11px] flex-shrink-0 transition-all"><i className="fas fa-power-off"></i></button>
+                                    
+                                    {}
+                                    <div className="flex gap-2">
+                                        <button 
+                                            onClick={() => setGlobalCollapse(prev => ({ collapsed: !prev.collapsed, count: prev.count + 1 }))}
+                                            className="bg-white text-slate-600 px-4 py-2.5 rounded-2xl font-bold text-[11px] flex items-center gap-2 border border-slate-200 hover:bg-slate-50 transition-all"
+                                        >
+                                            <i className={`fas ${globalCollapse.collapsed ? 'fa-expand' : 'fa-compress'} text-indigo-500`}></i>
+                                            {globalCollapse.collapsed ? 'Expandir Ativos' : 'Minimizar Ativos'}
+                                        </button>
+                                        
+                                        <button 
+                                            onClick={() => setHideCompleted(!hideCompleted)}
+                                            className="bg-white text-slate-600 px-4 py-2.5 rounded-2xl font-bold text-[11px] flex items-center gap-2 border border-slate-200 hover:bg-slate-50 transition-all"
+                                        >
+                                            <i className={`fas ${hideCompleted ? 'fa-eye' : 'fa-eye-slash'} text-emerald-500`}></i>
+                                            {hideCompleted ? 'Expandir Finalizados' : 'Minimizar Finalizados'}
+                                        </button>
+
+                                        <button onClick={() => setIsTaskModalOpen(true)} className="btn-vibrant text-white px-6 py-2.5 rounded-2xl font-black text-[11px] uppercase tracking-widest flex items-center gap-2">
+                                            <i className="fas fa-plus"></i> Novo
+                                        </button>
+                                        
+                                        <button onClick={() => signOut(auth)} className="bg-red-50 text-red-500 px-4 py-2.5 rounded-2xl font-bold text-[11px] border border-red-100 hover:bg-red-500 hover:text-white transition-all">
+                                            <i className="fas fa-power-off"></i>
+                                        </button>
                                     </div>
                                 </div>
                             </header>
-
-                            <div className="flex overflow-x-auto hide-scrollbar gap-4 mb-4 pb-2 w-full">
-                                <StatCard label="Total" value={stats.total} icon="fa-layer-group" color="indigo" />
-                                <StatCard label="Execução" value={stats.progress} icon="fa-bolt" color="amber" />
-                                <StatCard label="Pendentes" value={stats.pending} icon="fa-clock" color="red" />
-                                <StatCard label="Finalizados" value={stats.completed} icon="fa-check-double" color="emerald" />
-                                <div className="glass-card px-5 py-4 rounded-3xl flex-shrink-0 min-w-[180px] lg:flex-1 relative overflow-hidden group">
-                                    <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:scale-110 transition-transform"><i className="fas fa-chart-line text-5xl"></i></div>
-                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Entregáveis</p>
-                                    <div className="flex items-end gap-3">
-                                        <span className="text-2xl font-black text-indigo-600">{stats.perc}%</span>
-                                        <div className="flex-1 progress-bar-container mb-2"><div className="progress-bar-fill" style={{width: `${stats.perc}%`}}></div></div>
-                                    </div>
-                                </div>
+                            
+                            <div className="flex overflow-x-auto hide-scrollbar gap-4 mb-2 pb-2">
+                                <StatCard label="Total" value={projects.length} icon="fa-layer-group" color="indigo" />
+                                <StatCard label="Execução" value={projects.filter(p => p.status === 'Andamento').length} icon="fa-bolt" color="amber" />
+                                <StatCard label="Pendentes" value={projects.filter(p => p.status === 'Pendente').length} icon="fa-clock" color="red" />
+                                <StatCard label="Finalizados" value={projects.filter(p => p.status === 'Concluído').length} icon="fa-check-double" color="emerald" />
                             </div>
                         </div>
                     </div>
 
-                    <main className="max-w-7xl mx-auto px-4 md:px-8 py-6 flex-grow w-full">
-                        <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
-                            <div className="xl:col-span-8 space-y-6">
-                                {filteredProjects.map(p => (
-                                    <ProjectCard 
-                                        key={p.id} p={p} 
-                                        isCompact={hideCompleted && p.status === 'Concluído'}
-                                        globalCollapse={globalCollapse} 
-                                        searchTerm={searchTerm}
-                                        onEdit={() => { setEditingId(p.id); setTaskData(p); setIsTaskModalOpen(true); }}
-                                        onDelete={() => deleteProject(p.id)}
-                                        onStatus={(s) => updateStatus(p.id, s)}
-                                        onToggleSub={(sId) => toggleSub(p.id, sId)}
-                                        onAddHistoryNote={(sId, txt) => addHistoryNote(p.id, sId, txt)}
-                                        onToggleHistoryNote={(sId, nIdx) => toggleHistoryNote(p.id, sId, nIdx)}
-                                        onDeleteHistoryNote={(sId, nIdx) => deleteHistoryNote(p.id, sId, nIdx)}
-                                        onAddSub={() => { setSubtaskData({ parentId: p.id, subId: null, title: '', note: '' }); setIsSubtaskModalOpen(true); }}
-                                    />
-                                ))}
-                                {filteredProjects.length === 0 && !loading && (
-                                    <div className="text-center py-32 bg-white rounded-[3rem] border-2 border-dashed border-slate-100 flex flex-col items-center">
-                                        <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center text-slate-200 text-3xl mb-4"><i className="fas fa-search"></i></div>
-                                        <p className="text-slate-400 font-bold uppercase tracking-widest text-xs">Nenhum resultado para "{searchTerm}"</p>
-                                    </div>
-                                )}
-                            </div>
-                            
-                            <div className="xl:col-span-4 space-y-8">
-                                <div className="glass-card p-8 rounded-[2.5rem] sticky top-[180px] border-indigo-50 shadow-indigo-100/20">
-                                    <h2 className="text-xl font-black text-slate-900 mb-8 flex items-center gap-3"><i className="fas fa-chart-pie text-indigo-500"></i> Visão de Status</h2>
-                                    <div className="relative h-64 mb-8"><canvas ref={chartRef}></canvas></div>
-                                    <div className="pt-8 border-t border-slate-50">
-                                        <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-center mb-6">Alertas de Entrega</h3>
-                                        <div className="space-y-4">
-                                            {projects.filter(p => p.status !== 'Concluído' && p.end).sort((a, b) => new Date(a.end) - new Date(b.end)).slice(0, 3).map(p => (
-                                                <div key={p.id} className="p-4 bg-slate-50/50 rounded-2xl flex justify-between items-center border border-slate-100 hover:border-amber-200 transition-all group">
-                                                    <div className="min-w-0">
-                                                        <p className="text-xs font-black truncate text-slate-800 group-hover:text-amber-700 transition-colors">{p.title}</p>
-                                                        <p className="text-[10px] text-slate-400 font-bold mt-1 uppercase tracking-tighter">Termina: {formatDate(p.end)}</p>
-                                                    </div>
-                                                    <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center text-amber-600"><i className="fas fa-hourglass-half text-[10px] animate-pulse"></i></div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                    <main className="max-w-7xl mx-auto px-4 md:px-8 py-6 w-full">
+                        <div className="space-y-6">
+                            {filteredProjects.map(p => (
+                                <ProjectCard 
+                                    key={p.id} p={p} 
+                                    isCompact={hideCompleted && p.status === 'Concluído'}
+                                    globalCollapse={globalCollapse}
+                                    searchTerm={searchTerm}
+                                    onEdit={() => { setEditingId(p.id); setTaskData(p); setIsTaskModalOpen(true); }}
+                                    onDelete={async () => { if(window.confirm("Eliminar?")) await deleteDoc(doc(db, DB_COLLECTION, p.id)); }}
+                                    onStatus={async (s) => await updateDoc(doc(db, DB_COLLECTION, p.id), { status: s })}
+                                    onAddSub={() => { setSubtaskData({ parentId: p.id, subId: null, title: '', note: '' }); setIsSubtaskModalOpen(true); }}
+                                />
+                            ))}
                         </div>
                     </main>
-
-                    <footer className="py-16 text-center">
-                        <div className="flex justify-center gap-8 mb-4 text-slate-300 text-xl opacity-50">
-                            <i className="fab fa-react"></i>
-                            <i className="fas fa-fire text-orange-400"></i>
-                            <i className="fas fa-cloud text-sky-400"></i>
-                        </div>
-                        <p className="text-slate-400 text-[10px] font-black tracking-[0.3em] uppercase italic">Design & Cloud Engineering by Wilson Costa - IDW 2026</p>
-                    </footer>
-
-                    { }
-                    {isTaskModalOpen && (
-                        <div className="fixed inset-0 z-50 modal-backdrop flex items-center justify-center p-4">
-                            <div className="bg-white rounded-[3rem] w-full max-w-2xl p-10 animate-slide overflow-y-auto max-h-[90vh] shadow-2xl relative">
-                                <button onClick={closeTaskModal} className="absolute top-8 right-8 text-slate-300 hover:text-red-500 transition-colors"><i className="fas fa-times text-2xl"></i></button>
-                                <h3 className="text-3xl font-black mb-10 tracking-tighter">{editingId ? 'Editar Registo' : 'Novo Projeto'}</h3>
-                                <form onSubmit={saveProject} className="grid grid-cols-1 md:grid-cols-2 gap-8 text-sm">
-                                    <div className="space-y-5">
-                                        <label className="text-[10px] font-black uppercase text-slate-400 ml-2 tracking-widest">Informação Básica</label>
-                                        <input required type="text" placeholder="Título do Projeto" value={taskData.title} onChange={e => setTaskData({...taskData, title: e.target.value})} className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:border-indigo-400 focus:bg-white transition-all"/>
-                                        <div className="grid grid-cols-2 gap-3">
-                                            <input required type="date" value={taskData.start} onChange={e => setTaskData({...taskData, start: e.target.value})} className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none"/>
-                                            <input required type="date" value={taskData.end} onChange={e => setTaskData({...taskData, end: e.target.value})} className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none"/>
-                                        </div>
-                                        <select value={taskData.priority} onChange={e => setTaskData({...taskData, priority: e.target.value})} className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none font-bold text-slate-600"><option>Baixa</option><option>Média</option><option>Alta</option></select>
-                                    </div>
-                                    <div className="space-y-5">
-                                        <label className="text-[10px] font-black uppercase text-slate-400 ml-2 tracking-widest">Responsabilidades</label>
-                                        <input type="text" placeholder="Project Manager / Dono" value={taskData.owner} onChange={e => setTaskData({...taskData, owner: e.target.value})} className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:border-indigo-400 transition-all"/>
-                                        <input type="text" placeholder="Equipa Responsável" value={taskData.team} onChange={e => setTaskData({...taskData, team: e.target.value})} className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:border-indigo-400 transition-all"/>
-                                        <input type="text" placeholder="Empresa / Cliente" value={taskData.company} onChange={e => setTaskData({...taskData, company: e.target.value})} className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:border-indigo-400 transition-all"/>
-                                    </div>
-                                    <div className="col-span-full pt-8 flex gap-4">
-                                        <button type="button" onClick={closeTaskModal} className="flex-1 py-4 text-slate-400 font-black text-xs uppercase tracking-widest hover:bg-slate-50 rounded-2xl transition-all">Cancelar</button>
-                                        <button type="submit" className="flex-[2] py-4 btn-vibrant text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg">Confirmar e Guardar</button>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
-                    )}
                     
-                    {isSubtaskModalOpen && (
-                        <div className="fixed inset-0 z-50 modal-backdrop flex items-center justify-center p-4">
-                            <div className="bg-white rounded-[2.5rem] w-full max-w-md p-10 animate-slide shadow-2xl">
-                                <div className="w-16 h-16 bg-slate-900 text-white rounded-2xl flex items-center justify-center text-2xl mx-auto mb-6"><i className="fas fa-tasks"></i></div>
-                                <h3 className="text-2xl font-black mb-8 tracking-tighter text-center">Nova Etapa Crítica</h3>
-                                <form onSubmit={saveSubtask} className="space-y-5">
-                                    <input required type="text" placeholder="O que precisa de ser feito?" value={subtaskData.title} onChange={e => setSubtaskData({...subtaskData, title: e.target.value})} className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:border-indigo-500 transition-all font-bold"/>
-                                    <textarea placeholder="Primeiro registo de histórico..." required value={subtaskData.note} onChange={e => setSubtaskData({...subtaskData, note: e.target.value})} className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-xs min-h-[100px] outline-none" />
-                                    <div className="flex gap-3 pt-6">
-                                        <button type="button" onClick={() => setIsSubtaskModalOpen(false)} className="flex-1 py-4 text-slate-400 font-bold text-xs uppercase">Voltar</button>
-                                        <button type="submit" className="flex-[2] py-4 bg-slate-950 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-black shadow-xl">Criar Etapa</button>
+                    {/* MODALS (Simplified for speed) */}
+                    {isTaskModalOpen && (
+                        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+                            <div className="bg-white rounded-[2.5rem] w-full max-w-xl p-10 animate-slide">
+                                <h3 className="text-2xl font-black mb-8">{editingId ? 'Editar' : 'Novo'} Projeto</h3>
+                                <form onSubmit={async (e) => {
+                                    e.preventDefault();
+                                    if(editingId) await updateDoc(doc(db, DB_COLLECTION, editingId), taskData);
+                                    else await addDoc(collection(db, DB_COLLECTION), { ...taskData, status: 'Pendente', subtasks: [], createdAt: serverTimestamp() });
+                                    setIsTaskModalOpen(false); setEditingId(null);
+                                }} className="space-y-4">
+                                    <input required placeholder="Título" value={taskData.title} onChange={e => setTaskData({...taskData, title: e.target.value})} className="w-full p-4 bg-slate-50 rounded-2xl outline-none border border-slate-100"/>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <input type="date" value={taskData.start} onChange={e => setTaskData({...taskData, start: e.target.value})} className="p-4 bg-slate-50 rounded-2xl outline-none text-xs"/>
+                                        <input type="date" value={taskData.end} onChange={e => setTaskData({...taskData, end: e.target.value})} className="p-4 bg-slate-50 rounded-2xl outline-none text-xs"/>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <button type="button" onClick={() => setIsTaskModalOpen(false)} className="flex-1 py-4 font-bold text-slate-400">Cancelar</button>
+                                        <button type="submit" className="flex-[2] py-4 btn-vibrant text-white rounded-2xl font-black uppercase tracking-widest">Guardar</button>
                                     </div>
                                 </form>
                             </div>
@@ -702,148 +360,96 @@
 
         function StatCard({ label, value, icon, color }) {
             const colors = {
-                indigo: "text-indigo-600 bg-indigo-50 border-indigo-100",
-                amber: "text-amber-600 bg-amber-50 border-amber-100",
-                red: "text-red-600 bg-red-50 border-red-100",
-                emerald: "text-emerald-600 bg-emerald-50 border-emerald-100"
+                indigo: "text-indigo-600 bg-indigo-50",
+                amber: "text-amber-600 bg-amber-50",
+                red: "text-red-600 bg-red-50",
+                emerald: "text-emerald-600 bg-emerald-50"
             };
             return (
-                <div className="glass-card px-6 py-5 rounded-[2rem] shadow-sm flex-shrink-0 min-w-[150px] lg:flex-1 group">
-                    <div className="flex justify-between items-start mb-3">
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm ${colors[color]} group-hover:scale-110 transition-transform`}><i className={`fas ${icon}`}></i></div>
-                        <span className="text-2xl font-black text-slate-900">{value}</span>
+                <div className="glass-card px-6 py-4 rounded-[2rem] min-w-[160px] flex-1">
+                    <div className="flex justify-between items-center mb-2">
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm ${colors[color]}`}><i className={`fas ${icon}`}></i></div>
+                        <span className="text-xl font-black text-slate-900">{value}</span>
                     </div>
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{label}</p>
                 </div>
             );
         }
 
-        function ProjectCard({ p, isCompact, globalCollapse, searchTerm, onEdit, onDelete, onStatus, onToggleSub, onAddSub, onAddHistoryNote, onToggleHistoryNote, onDeleteHistoryNote }) {
+        function ProjectCard({ p, isCompact, globalCollapse, searchTerm, onEdit, onDelete, onStatus, onAddSub }) {
             const [isCollapsed, setIsCollapsed] = useState(isCompact);
-            const [addingToSubId, setAddingToSubId] = useState(null);
-            const [newNoteText, setNewNoteText] = useState("");
-
-            useEffect(() => { setIsCollapsed(isCompact); }, [isCompact]);
-            useEffect(() => { if (globalCollapse && globalCollapse.count > 0 && p.status !== 'Concluído') setIsCollapsed(globalCollapse.collapsed); }, [globalCollapse.count]);
-
-            useEffect(() => {
-                if (searchTerm.trim()) {
-                    const hasMatch = p.subtasks?.some(sub => sub.title.toLowerCase().includes(searchTerm.toLowerCase()) || sub.notes?.some(n => n.text.toLowerCase().includes(searchTerm.toLowerCase())));
-                    if (hasMatch) setIsCollapsed(false);
-                }
-            }, [searchTerm]);
-
-            const total = p.subtasks?.length || 0;
-            const completedCount = p.subtasks?.filter(s => s.completed).length || 0;
-            const sumProgress = p.subtasks?.reduce((acc, sub) => acc + (sub.progress ?? (sub.completed ? 100 : 0)), 0) || 0;
-            const progress = total > 0 ? Math.round(sumProgress / total) : (p.status === 'Concluído' ? 100 : 0);
             
-            const handleAddNote = (subId) => { if (!newNoteText.trim()) return; onAddHistoryNote(subId, newNoteText); setNewNoteText(""); setAddingToSubId(null); };
+            useEffect(() => { setIsCollapsed(isCompact); }, [isCompact]);
+            useEffect(() => { 
+                if (globalCollapse.count > 0 && p.status !== 'Concluído') {
+                    setIsCollapsed(globalCollapse.collapsed); 
+                }
+            }, [globalCollapse.count]);
+
+            const progress = p.subtasks?.length ? Math.round((p.subtasks.filter(s => s.completed).length / p.subtasks.length) * 100) : (p.status === 'Concluído' ? 100 : 0);
 
             return (
-                <div className={`glass-card rounded-[2.5rem] p-7 transition-all ${isCollapsed ? 'bg-slate-50/40 border-dashed opacity-80' : 'bg-white border-slate-100 ring-1 ring-indigo-50/50'}`}>
-                    <div className="flex flex-col lg:flex-row justify-between gap-8">
+                <div className={`glass-card rounded-[2.5rem] p-7 transition-all ${isCollapsed ? 'bg-slate-50/40 opacity-80' : 'bg-white'}`}>
+                    <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
                         <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-3 mb-3">
-                                <span className={`status-pill status-${p.status}`}>{p.status === 'Andamento' ? 'Execução' : p.status === 'Concluído' ? 'Finalizado' : p.status}</span>
-                                <span className={`text-[10px] font-black uppercase px-2 py-1 rounded-md tracking-tighter ${p.priority === 'Alta' ? 'text-red-500 bg-red-50' : 'text-slate-400 bg-slate-100'}`}>Prio: {p.priority}</span>
+                            <div className="flex items-center gap-3 mb-2">
+                                <span className={`status-pill status-${p.status}`}>{p.status}</span>
+                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">Prio: {p.priority}</span>
                             </div>
-                            <h3 className="text-2xl font-black text-slate-900 truncate leading-tight">
+                            <h3 className="text-xl font-black text-slate-900 truncate">
                                 <HighlightedText text={p.title} term={searchTerm} />
                             </h3>
-                            <p className="text-xs text-slate-400 mt-2 flex items-center gap-2 font-bold uppercase tracking-wider"><i className="far fa-calendar-alt text-indigo-400"></i> {formatDate(p.start)} <span className="opacity-30">—</span> {formatDate(p.end)}</p>
-                            
-                            {isCollapsed && (
-                                <div className="mt-5 flex items-center gap-4 animate-slide">
-                                    <div className="flex-1 progress-bar-container"><div className="progress-bar-fill" style={{width: `${progress}%`}}></div></div>
-                                    <span className="text-[10px] font-black text-indigo-600">{progress}%</span>
-                                </div>
-                            )}
                         </div>
                         
-                        <div className="flex flex-col justify-center bg-slate-50/80 p-5 rounded-3xl min-w-[280px] border border-slate-100 group relative shadow-inner">
-                            <button onClick={onEdit} className="absolute top-3 right-3 text-slate-300 opacity-0 group-hover:opacity-100 p-2 hover:bg-white hover:text-indigo-600 rounded-xl transition-all"><i className="fas fa-edit text-xs"></i></button>
-                            <div className="space-y-2.5">
-                                <div className="flex items-center gap-3"><i className="fas fa-id-badge text-indigo-500 w-4"></i><span className="font-black text-slate-400 uppercase text-[8px] w-12">Dono:</span><span className="text-xs font-bold text-slate-700 truncate"><HighlightedText text={p.owner} term={searchTerm} /></span></div>
-                                <div className="flex items-center gap-3"><i className="fas fa-users-cog text-indigo-500 w-4"></i><span className="font-black text-slate-400 uppercase text-[8px] w-12">Equipa:</span><span className="text-xs font-bold text-slate-700 truncate"><HighlightedText text={p.team} term={searchTerm} /></span></div>
-                                <div className="flex items-center gap-3"><i className="fas fa-building text-indigo-500 w-4"></i><span className="font-black text-slate-400 uppercase text-[8px] w-12">Cliente:</span><span className="text-xs font-bold text-slate-700 truncate"><HighlightedText text={p.company} term={searchTerm} /></span></div>
+                        <div className="flex items-center gap-4 w-full lg:w-auto">
+                            <div className="flex-1 lg:w-48">
+                                <div className="flex justify-between items-center mb-1 text-[9px] font-black uppercase text-slate-400">
+                                    <span>Progresso</span>
+                                    <span className="text-indigo-600">{progress}%</span>
+                                </div>
+                                <div className="progress-bar-container"><div className="progress-bar-fill" style={{width: `${progress}%`}}></div></div>
                             </div>
-                        </div>
-
-                        <div className="flex lg:flex-col gap-2 items-center justify-center">
-                            <button onClick={() => setIsCollapsed(!isCollapsed)} className={`w-12 h-12 rounded-2xl transition-all flex items-center justify-center shadow-sm ${isCollapsed ? 'bg-amber-500 text-white shadow-amber-200' : 'bg-slate-100 text-slate-400'}`}><i className={`fas ${isCollapsed ? 'fa-plus' : 'fa-minus'}`}></i></button>
-                            {!isCollapsed && <button onClick={onAddSub} className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center shadow-indigo-100"><i className="fas fa-tasks"></i></button>}
-                            <button onClick={onDelete} className="w-12 h-12 bg-red-50 text-red-500 rounded-2xl flex items-center justify-center hover:bg-red-500 hover:text-white transition-all"><i className="fas fa-trash-alt text-xs"></i></button>
+                            
+                            <div className="flex gap-2">
+                                <button onClick={() => setIsCollapsed(!isCollapsed)} className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${isCollapsed ? 'bg-amber-100 text-amber-600' : 'bg-slate-100 text-slate-400'}`}>
+                                    <i className={`fas ${isCollapsed ? 'fa-plus' : 'fa-minus'}`}></i>
+                                </button>
+                                <button onClick={onEdit} className="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center"><i className="fas fa-edit"></i></button>
+                                <button onClick={onDelete} className="w-10 h-10 bg-red-50 text-red-500 rounded-xl flex items-center justify-center"><i className="fas fa-trash-alt"></i></button>
+                            </div>
                         </div>
                     </div>
 
                     {!isCollapsed && (
-                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 border-t border-slate-100 mt-8 pt-8 animate-in">
-                            <div className="lg:col-span-4">
-                                <div className="flex justify-between items-end mb-3"><span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Performance Geral</span><span className="text-lg font-black text-indigo-600">{progress}%</span></div>
-                                <div className="progress-bar-container"><div className="progress-bar-fill" style={{width: `${progress}%`}}></div></div>
-                                <div className="mt-6 bg-slate-50 p-2 rounded-2xl">
-                                     <select value={p.status} onChange={(e) => onStatus(e.target.value)} className="w-full p-3 bg-transparent border-none rounded-xl text-[10px] font-black uppercase text-slate-600 cursor-pointer outline-none">
-                                        <option value="Andamento">Execução</option><option value="Pendente">Pendente</option><option value="Planeamento">Planeamento</option><option value="Concluído">Finalizado</option>
-                                    </select>
-                                </div>
+                        <div className="mt-8 pt-8 border-t border-slate-100 animate-slide">
+                            <div className="flex justify-between items-center mb-6">
+                                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Detalhes & Tarefas</h4>
+                                <button onClick={onAddSub} className="text-indigo-600 font-black text-[10px] uppercase flex items-center gap-2"><i className="fas fa-plus-circle"></i> Adicionar Tarefa</button>
                             </div>
                             
-                            <div className="lg:col-span-8 space-y-6">
-                                {p.subtasks?.map(sub => (
-                                    <div key={sub.id} className="bg-slate-50/50 p-6 rounded-3xl border border-transparent hover:border-slate-200 transition-all group/task">
-                                        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-4">
-                                            <div className="flex items-center gap-4 flex-1">
-                                                <input type="checkbox" checked={sub.completed} onChange={() => onToggleSub(p.id, sub.id)} className="w-6 h-6 rounded-lg border-slate-300 text-indigo-600 cursor-pointer transition-all focus:ring-offset-2 focus:ring-indigo-500"/>
-                                                <div className="flex-1 min-w-0">
-                                                    <p className={`font-black text-sm truncate ${sub.completed ? 'line-through text-slate-300' : 'text-slate-800'}`}>
-                                                        <HighlightedText text={sub.title} term={searchTerm} />
-                                                    </p>
-                                                    <div className="flex items-center gap-2 mt-1">
-                                                        <div className="h-1.5 flex-1 bg-slate-200 rounded-full overflow-hidden"><div className="h-full bg-indigo-500" style={{width: `${sub.progress ?? (sub.completed ? 100 : 0)}%`}}></div></div>
-                                                        <span className="text-[9px] font-black text-indigo-500">{sub.progress ?? (sub.completed ? 100 : 0)}%</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <button onClick={() => setAddingToSubId(addingToSubId === sub.id ? null : sub.id)} className={`text-[10px] font-black px-4 py-2 rounded-xl transition-all uppercase tracking-widest ${addingToSubId === sub.id ? 'bg-indigo-600 text-white' : 'bg-white text-indigo-600 border border-indigo-100 hover:bg-indigo-50'}`}>Atualizar</button>
-                                        </div>
-
-                                        {addingToSubId === sub.id && (
-                                            <div className="mb-6 animate-slide bg-white p-4 rounded-2xl border border-indigo-100 shadow-sm">
-                                                <textarea className="note-input mb-3" placeholder="O que foi alterado nesta etapa?" value={newNoteText} onChange={(e) => setNewNoteText(e.target.value)} rows="2" autoFocus />
-                                                <div className="flex justify-end"><button onClick={() => handleAddNote(sub.id)} className="bg-indigo-600 text-white text-[10px] px-6 py-2.5 rounded-xl font-black uppercase tracking-widest shadow-lg shadow-indigo-100">Registar</button></div>
-                                            </div>
-                                        )}
-
-                                        <div className="space-y-2 pl-10 border-l-2 border-slate-100 ml-3">
-                                            {sub.notes?.map((n, idx) => (
-                                                <div key={idx} className="bg-white/80 px-4 py-3 rounded-2xl border border-slate-100 shadow-sm group/note relative hover:border-indigo-100 transition-all">
-                                                    <div className="flex items-start gap-3">
-                                                        <input type="checkbox" checked={n.completed} onChange={() => onToggleHistoryNote(p.id, sub.id, idx)} className="mt-1 w-4 h-4 rounded border-slate-200 text-indigo-500 cursor-pointer"/>
-                                                        <p className={`text-[11px] leading-relaxed font-medium ${n.completed ? 'line-through text-slate-300' : 'text-slate-600'}`}>
-                                                            <HighlightedText text={n.text} term={searchTerm} />
-                                                        </p>
-                                                    </div>
-                                                    <div className="flex justify-between items-center mt-2 pt-2 border-t border-slate-50">
-                                                        <span className="text-[8px] font-black text-slate-300 uppercase tracking-widest flex items-center gap-2"><i className="far fa-clock"></i> {n.time}</span>
-                                                        <button onClick={() => onDeleteHistoryNote(p.id, sub.id, idx)} className="opacity-0 group-note:opacity-100 text-red-300 hover:text-red-500 transition-all"><i className="fas fa-times-circle text-xs"></i></button>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                ))}
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                <div className="p-4 bg-slate-50 rounded-2xl">
+                                    <p className="text-[8px] font-black text-slate-400 uppercase mb-1">Status do Projeto</p>
+                                    <select value={p.status} onChange={e => onStatus(e.target.value)} className="w-full bg-transparent font-bold text-xs outline-none">
+                                        <option value="Andamento">Execução</option>
+                                        <option value="Pendente">Pendente</option>
+                                        <option value="Planeamento">Planeamento</option>
+                                        <option value="Concluído">Finalizado</option>
+                                    </select>
+                                </div>
+                                <div className="p-4 bg-slate-50 rounded-2xl">
+                                    <p className="text-[8px] font-black text-slate-400 uppercase mb-1">Dono / Responsável</p>
+                                    <p className="font-bold text-xs text-slate-700">{p.owner || 'Não atribuído'}</p>
+                                </div>
+                                <div className="p-4 bg-slate-50 rounded-2xl">
+                                    <p className="text-[8px] font-black text-slate-400 uppercase mb-1">Prazos</p>
+                                    <p className="font-bold text-xs text-slate-700">Até {p.end ? new Date(p.end).toLocaleDateString() : 'Sem data'}</p>
+                                </div>
                             </div>
                         </div>
                     )}
                 </div>
             );
-        }
-
-        function formatDate(s) {
-            if (!s) return '-';
-            const [y, m, d] = s.split('-');
-            return `${d}/${m}/${y}`;
         }
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
