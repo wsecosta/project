@@ -645,6 +645,10 @@
                                     <button onClick={() => setGlobalCollapse(prev => ({ collapsed: !prev.collapsed, count: prev.count + 1 }))} className="bg-white border border-slate-200 text-slate-500 px-4 py-2.5 rounded-xl font-bold hover:bg-slate-50 text-[10px] uppercase tracking-wider flex items-center gap-2 shadow-sm transition-all">
                                         <i className={globalCollapse.collapsed ? 'fas fa-maximize text-indigo-500' : 'fas fa-minimize'}></i> {globalCollapse.collapsed ? 'Ver Detalhes' : 'Recolher Ativos'}
                                     </button>
+
+                                    <button onClick={() => setHideCompleted(!hideCompleted)} className="bg-white border border-slate-200 text-slate-500 px-4 py-2.5 rounded-xl font-bold hover:bg-slate-50 text-[10px] uppercase tracking-wider flex items-center gap-2 shadow-sm transition-all">
+                                        <i className={hideCompleted ? 'fas fa-eye text-indigo-500' : 'fas fa-eye-slash'}></i> {hideCompleted ? 'Mostrar Concluídos' : 'Ocultar Concluídos'}
+                                    </button>
                                     
                                     <button onClick={() => setIsTaskModalOpen(true)} className="btn-premium btn-primary px-6 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center gap-2"><i className="fas fa-plus-circle"></i> Novo Projeto</button>
                                     <button onClick={handleLogout} className="bg-rose-50 text-rose-600 px-4 py-2.5 rounded-xl font-bold hover:bg-rose-600 hover:text-white text-[10px] uppercase tracking-wider flex items-center gap-2 border border-rose-100"><i className="fas fa-power-off"></i> Sair</button>
