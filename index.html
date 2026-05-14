@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestão de Projetos - IDW</title>
+    <title>IDW Projects - Gestão</title>
     
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -13,7 +13,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
         
         :root {
             --primary: #4f46e5;
@@ -25,7 +25,6 @@
             background-color: var(--bg-main);
             color: #1e293b;
             margin: 0;
-            overflow-x: hidden;
             letter-spacing: -0.01em;
         }
 
@@ -33,8 +32,7 @@
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
         .glass-card {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(8px);
+            background: rgba(255, 255, 255, 1);
             border: 1px solid #e2e8f0;
             transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
         }
@@ -68,16 +66,16 @@
         .sticky-header-container {
             position: sticky;
             top: 0;
-            z-index: 50;
-            background-color: rgba(248, 250, 252, 0.9);
-            backdrop-filter: blur(20px);
+            z-index: 40;
+            background-color: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(16px);
             border-bottom: 1px solid transparent;
             transition: all 0.3s ease;
         }
 
         .scrolled-header {
             border-bottom-color: #e2e8f0;
-            box-shadow: 0 4px 12px -2px rgba(0,0,0,0.05);
+            box-shadow: 0 4px 12px -2px rgba(0,0,0,0.03);
         }
 
         .btn-action {
@@ -94,7 +92,6 @@
         .btn-primary {
             background: #4f46e5;
             color: white;
-            box-shadow: 0 2px 4px rgba(79, 70, 229, 0.1);
         }
 
         .btn-primary:hover {
@@ -234,6 +231,25 @@
                 return () => unsubscribe();
             }, [user]);
 
+            useEffect(() => {
+                if (loading || !chartRef.current || projects.length === 0 || !user) return;
+                if (chartInstance.current) chartInstance.current.destroy();
+                const a = projects.filter(proj => proj.status === 'Andamento').length;
+                const p = projects.filter(proj => proj.status === 'Pendente').length;
+                const pl = projects.filter(proj => proj.status === 'Planeamento').length;
+                const c = projects.filter(proj => proj.status === 'Concluído').length;
+                
+                const ctx = chartRef.current.getContext('2d');
+                chartInstance.current = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Execução', 'Pendente', 'Plan', 'Fim'],
+                        datasets: [{ data: [a, p, pl, c], backgroundColor: ['#fbbf24', '#f87171', '#38bdf8', '#4ade80'], borderWidth: 0 }]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false, cutout: '75%', plugins: { legend: { display: false } } }
+                });
+            }, [projects, loading, user]);
+
             const handleLogin = async (e) => {
                 e.preventDefault();
                 setIsLoggingIn(true);
@@ -257,14 +273,37 @@
                 } catch(err) {}
             };
 
-            const updateStatus = async (id, newStatus) => {
-                await updateDoc(doc(db, DB_COLLECTION, id), { status: newStatus });
-            };
+            const updateStatus = async (id, newStatus) => { await updateDoc(doc(db, DB_COLLECTION, id), { status: newStatus }); };
 
             const toggleSub = async (tId, sId) => {
                 const p = projects.find(proj => proj.id === tId);
                 const newSubs = p.subtasks.map(s => s.id === sId ? { ...s, completed: !s.completed } : s);
                 await updateDoc(doc(db, DB_COLLECTION, tId), { subtasks: newSubs });
+            };
+
+            const addHistoryNote = async (projectId, subtaskId, text) => {
+                if (!text.trim()) return;
+                const project = projects.find(p => p.id === projectId);
+                const time = new Date().toLocaleString('pt-PT', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
+                const newSubtasks = project.subtasks.map(sub => {
+                    if (sub.id === subtaskId) {
+                        const newNotes = [...(sub.notes || []), { text, time, completed: false }];
+                        return { ...sub, notes: newNotes };
+                    }
+                    return sub;
+                });
+                await updateDoc(doc(db, DB_COLLECTION, projectId), { subtasks: newSubtasks });
+            };
+
+            const saveSubtask = async (e) => {
+                e.preventDefault();
+                const p = projects.find(proj => proj.id === subtaskData.parentId);
+                let newSubs = [...(p.subtasks || [])];
+                const time = new Date().toLocaleString('pt-PT', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
+                newSubs.push({ id: Date.now().toString(), title: subtaskData.title, completed: false, notes: [{ text: subtaskData.note, time }] });
+                await updateDoc(doc(db, DB_COLLECTION, p.id), { subtasks: newSubs });
+                setIsSubtaskModalOpen(false);
+                setSubtaskData({ parentId: '', title: '', note: '' });
             };
 
             const stats = {
@@ -276,19 +315,19 @@
                 perc: projects.length ? Math.round((projects.filter(p => p.status === 'Concluído').length / projects.length) * 100) : 0
             };
 
-            if (authLoading) return <div className="h-screen flex items-center justify-center text-[10px] font-black uppercase tracking-widest text-indigo-600">AUTHENTICATING...</div>;
+            if (authLoading) return <div className="h-screen flex items-center justify-center text-[10px] font-black uppercase tracking-widest text-indigo-600">IDW CLOUD...</div>;
 
             if (!user) {
                 return (
-                    <div className="min-h-screen bg-slate-900 flex items-center justify-center p-6">
-                        <div className="bg-white p-10 rounded-[2rem] w-full max-w-md animate-slide">
-                            <h2 className="text-2xl font-black mb-2 text-center">Portal IDW</h2>
+                    <div className="min-h-screen bg-slate-950 flex items-center justify-center p-6">
+                        <div className="bg-white p-10 rounded-[2.5rem] w-full max-w-md animate-slide">
+                            <h2 className="text-2xl font-black mb-2 text-center text-slate-900">Portal IDW</h2>
                             <p className="text-center text-slate-400 text-xs mb-8 uppercase font-bold tracking-widest">Acesso Restrito</p>
                             <form onSubmit={handleLogin} className="space-y-4">
-                                <input type="email" required value={email} onChange={e => setEmail(e.target.value)} className="w-full p-4 bg-slate-50 border rounded-2xl outline-none" placeholder="E-mail"/>
-                                <input type="password" required value={password} onChange={e => setPassword(e.target.value)} className="w-full p-4 bg-slate-50 border rounded-2xl outline-none" placeholder="Palavra-passe"/>
-                                {loginError && <p className="text-rose-500 text-xs font-bold text-center bg-rose-50 p-2 rounded-lg">{loginError}</p>}
-                                <button type="submit" className="w-full bg-indigo-600 text-white py-4 rounded-2xl font-black uppercase tracking-widest hover:bg-indigo-700 transition-all">Aceder</button>
+                                <input type="email" required value={email} onChange={e => setEmail(e.target.value)} className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500" placeholder="E-mail"/>
+                                <input type="password" required value={password} onChange={e => setPassword(e.target.value)} className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Password"/>
+                                {loginError && <p className="text-rose-500 text-[10px] font-bold text-center bg-rose-50 p-2 rounded-lg">{loginError}</p>}
+                                <button type="submit" className="w-full bg-indigo-600 text-white py-4 rounded-2xl font-black uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100">Aceder</button>
                             </form>
                         </div>
                     </div>
@@ -297,15 +336,16 @@
 
             return (
                 <div className="bg-slate-50 min-h-screen flex flex-col">
-                    <div className={`sticky-header-container px-6 py-3 ${isScrolled ? 'scrolled-header' : ''}`}>
+                    {}
+                    <div className={`sticky-header-container px-4 py-2 ${isScrolled ? 'scrolled-header' : ''}`}>
                         <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4">
                             <div className="flex items-center gap-6">
-                                <h1 className="text-xl font-black text-slate-900 tracking-tighter">IDW<span className="text-indigo-600">Projects</span></h1>
-                                <div className="hidden lg:flex items-center gap-1 bg-white border border-slate-200 rounded-xl px-3 py-1.5 shadow-sm">
+                                <h1 className="text-lg font-black text-slate-900 tracking-tighter">IDW<span className="text-indigo-600">Projects</span></h1>
+                                <div className="hidden lg:flex items-center gap-1 bg-slate-100/50 rounded-xl px-3 py-1.5 border border-slate-200/50">
                                     <i className="fas fa-search text-slate-300 text-[10px]"></i>
                                     <input 
                                         type="text" placeholder="Pesquisar..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
-                                        className="bg-transparent border-none outline-none text-[11px] font-medium w-40"
+                                        className="bg-transparent border-none outline-none text-[11px] font-semibold w-40"
                                     />
                                 </div>
                             </div>
@@ -313,21 +353,23 @@
                             <div className="flex items-center gap-4 overflow-x-auto hide-scrollbar">
                                 <div className="flex items-center gap-3 pr-4 border-r border-slate-200">
                                     <Metric label="Exec" value={stats.progress} color="amber" />
-                                    <Metric label="Pendente" value={stats.pending} color="rose" />
+                                    <Metric label="Pend" value={stats.pending} color="rose" />
                                     <Metric label="Fim" value={stats.completed} color="emerald" />
+                                    <div className="ml-2 w-12 h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                                        <div className="h-full bg-indigo-600" style={{width: `${stats.perc}%`}}></div>
+                                    </div>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    <button onClick={() => setGlobalCollapse(p => ({ ...p, collapsed: !p.collapsed, count: p.count+1 }))} title="Minimizar Tudo" className="btn-action bg-white border border-slate-200 text-slate-500 hover:bg-slate-50">
+                                    <button onClick={() => setGlobalCollapse(p => ({ ...p, collapsed: !p.collapsed, count: p.count+1 }))} className="btn-action bg-white border border-slate-200 text-slate-400">
                                         <i className={globalCollapse.collapsed ? 'fas fa-maximize' : 'fas fa-minimize'}></i>
                                     </button>
-                                    <button onClick={() => setHideCompleted(!hideCompleted)} className={`btn-action ${hideCompleted ? 'bg-indigo-50 text-indigo-600 border-indigo-100' : 'bg-white border-slate-200 text-slate-500'}`}>
+                                    <button onClick={() => setHideCompleted(!hideCompleted)} className={`btn-action ${hideCompleted ? 'bg-indigo-50 text-indigo-600 border-indigo-100' : 'bg-white border-slate-200 text-slate-400'}`}>
                                         <i className={hideCompleted ? 'fas fa-eye' : 'fas fa-eye-slash'}></i>
-                                        <span className="hidden sm:inline text-[10px]">{hideCompleted ? 'Ver Tudo' : 'Limpar Vista'}</span>
                                     </button>
                                     <button onClick={() => setIsTaskModalOpen(true)} className="btn-action btn-primary">
                                         <i className="fas fa-plus"></i> <span className="hidden sm:inline">Projeto</span>
                                     </button>
-                                    <button onClick={handleLogout} className="btn-action bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white">
+                                    <button onClick={handleLogout} className="btn-action bg-rose-50 text-rose-500">
                                         <i className="fas fa-power-off"></i>
                                     </button>
                                 </div>
@@ -335,8 +377,9 @@
                         </div>
                     </div>
 
-                    <main className="max-w-7xl mx-auto px-6 py-6 flex-grow w-full grid grid-cols-1 lg:grid-cols-12 gap-8">
-                        <div className="lg:col-span-12 space-y-4">
+                    {}
+                    <main className="max-w-7xl mx-auto px-4 py-6 flex-grow w-full grid grid-cols-1 lg:grid-cols-12 gap-8">
+                        <div className="lg:col-span-8 space-y-4">
                             {filteredProjects.map(p => (
                                 <ProjectCard 
                                     key={p.id} p={p} 
@@ -348,25 +391,70 @@
                                     onStatus={(s) => updateStatus(p.id, s)}
                                     onToggleSub={(sId) => toggleSub(p.id, sId)}
                                     onAddSub={() => { setSubtaskData({ parentId: p.id, title: '', note: '' }); setIsSubtaskModalOpen(true); }}
+                                    onAddNote={(sId, txt) => addHistoryNote(p.id, sId, txt)}
                                 />
                             ))}
+                        </div>
+                        
+                        {}
+                        <div className="lg:col-span-4 space-y-6">
+                            <div className="glass-card p-6 rounded-3xl sticky top-24 shadow-sm">
+                                <h4 className="text-xs font-black text-slate-800 uppercase tracking-widest mb-6 border-b pb-2">Desempenho</h4>
+                                <div className="h-48 relative mb-6">
+                                    <canvas ref={chartRef}></canvas>
+                                </div>
+                                <div className="space-y-3">
+                                    <p className="text-[10px] font-black text-slate-400 uppercase italic">Próximos Prazos</p>
+                                    {projects.filter(p => p.status !== 'Concluído' && p.end).sort((a,b) => new Date(a.end) - new Date(b.end)).slice(0,3).map(p => (
+                                        <div key={p.id} className="p-3 bg-slate-50 border border-slate-100 rounded-2xl flex justify-between items-center">
+                                            <div className="min-w-0">
+                                                <p className="text-[11px] font-bold text-slate-700 truncate">{p.title}</p>
+                                                <p className="text-[9px] text-slate-400">{formatDate(p.end)}</p>
+                                            </div>
+                                            <i className="fas fa-clock text-amber-400 text-xs"></i>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
                         </div>
                     </main>
 
                     {}
                     {isTaskModalOpen && (
                         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-                            <div className="bg-white rounded-3xl w-full max-w-xl p-8 animate-slide">
+                            <div className="bg-white rounded-[2.5rem] w-full max-w-xl p-8 animate-slide">
                                 <h3 className="text-xl font-black mb-6">{editingId ? 'Editar Projeto' : 'Novo Projeto'}</h3>
                                 <form onSubmit={saveProject} className="space-y-4">
-                                    <input required type="text" placeholder="Título" value={taskData.title} onChange={e => setTaskData({...taskData, title: e.target.value})} className="w-full p-3 bg-slate-50 border rounded-xl outline-none"/>
+                                    <input required type="text" placeholder="Título do Projeto" value={taskData.title} onChange={e => setTaskData({...taskData, title: e.target.value})} className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500 font-semibold"/>
                                     <div className="grid grid-cols-2 gap-4">
-                                        <input required type="date" value={taskData.start} onChange={e => setTaskData({...taskData, start: e.target.value})} className="p-3 bg-slate-50 border rounded-xl outline-none text-xs"/>
-                                        <input required type="date" value={taskData.end} onChange={e => setTaskData({...taskData, end: e.target.value})} className="p-3 bg-slate-50 border rounded-xl outline-none text-xs"/>
+                                        <div className="space-y-1">
+                                            <label className="text-[9px] font-bold uppercase ml-2 text-slate-400">Início</label>
+                                            <input required type="date" value={taskData.start} onChange={e => setTaskData({...taskData, start: e.target.value})} className="w-full p-3 bg-slate-50 border border-slate-100 rounded-2xl outline-none text-xs"/>
+                                        </div>
+                                        <div className="space-y-1">
+                                            <label className="text-[9px] font-bold uppercase ml-2 text-slate-400">Prazo</label>
+                                            <input required type="date" value={taskData.end} onChange={e => setTaskData({...taskData, end: e.target.value})} className="w-full p-3 bg-slate-50 border border-slate-100 rounded-2xl outline-none text-xs"/>
+                                        </div>
                                     </div>
                                     <div className="flex gap-2 pt-4">
-                                        <button type="button" onClick={() => setIsTaskModalOpen(false)} className="flex-1 py-3 font-bold text-slate-400">Cancelar</button>
-                                        <button type="submit" className="flex-1 py-3 bg-indigo-600 text-white rounded-xl font-bold">Guardar</button>
+                                        <button type="button" onClick={() => setIsTaskModalOpen(false)} className="flex-1 py-4 font-black text-slate-400 uppercase tracking-widest text-[10px]">Cancelar</button>
+                                        <button type="submit" className="flex-1 py-4 bg-indigo-600 text-white rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-lg shadow-indigo-100">Guardar</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    )}
+
+                    {isSubtaskModalOpen && (
+                        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+                            <div className="bg-white rounded-[2.5rem] w-full max-w-md p-8 animate-slide">
+                                <h3 className="text-xl font-black mb-6">Nova Etapa</h3>
+                                <form onSubmit={saveSubtask} className="space-y-4">
+                                    <input required type="text" placeholder="O que fazer?" value={subtaskData.title} onChange={e => setSubtaskData({...subtaskData, title: e.target.value})} className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none font-semibold"/>
+                                    <textarea placeholder="Primeira nota de histórico..." required value={subtaskData.note} onChange={e => setSubtaskData({...subtaskData, note: e.target.value})} className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl text-xs" rows="3"/>
+                                    <div className="flex gap-2 pt-4">
+                                        <button type="button" onClick={() => setIsSubtaskModalOpen(false)} className="flex-1 py-4 font-black text-slate-400 text-[10px] uppercase">Voltar</button>
+                                        <button type="submit" className="flex-1 py-4 bg-slate-900 text-white rounded-2xl font-black text-[10px] uppercase">Adicionar</button>
                                     </div>
                                 </form>
                             </div>
@@ -377,36 +465,32 @@
         }
 
         function Metric({ label, value, color }) {
-            const colors = {
-                amber: "text-amber-600",
-                rose: "text-rose-600",
-                emerald: "text-emerald-600"
-            };
+            const colors = { amber: "text-amber-500", rose: "text-rose-500", emerald: "text-emerald-500" };
             return (
                 <div className="flex flex-col items-center">
-                    <span className="text-[8px] font-black uppercase tracking-widest text-slate-400 leading-none mb-1">{label}</span>
+                    <span className="text-[8px] font-black uppercase text-slate-400 leading-none mb-1">{label}</span>
                     <span className={`text-xs font-black ${colors[color]}`}>{value}</span>
                 </div>
             );
         }
 
-        function ProjectCard({ p, isCompact, globalCollapse, searchTerm, onEdit, onDelete, onStatus, onToggleSub, onAddSub }) {
+        function ProjectCard({ p, isCompact, globalCollapse, searchTerm, onEdit, onDelete, onStatus, onToggleSub, onAddSub, onAddNote }) {
             const [isCollapsed, setIsCollapsed] = useState(isCompact);
+            const [noteText, setNoteText] = useState("");
+            const [activeSubId, setActiveSubId] = useState(null);
             
             useEffect(() => setIsCollapsed(isCompact), [isCompact]);
-            useEffect(() => { 
-                if (globalCollapse.count > 0 && p.status !== 'Concluído') setIsCollapsed(globalCollapse.collapsed); 
-            }, [globalCollapse.count]);
+            useEffect(() => { if (globalCollapse.count > 0 && p.status !== 'Concluído') setIsCollapsed(globalCollapse.collapsed); }, [globalCollapse.count]);
 
             const total = p.subtasks?.length || 0;
             const completed = p.subtasks?.filter(s => s.completed).length || 0;
             const progress = total > 0 ? Math.round((completed / total) * 100) : (p.status === 'Concluído' ? 100 : 0);
 
             return (
-                <div className={`glass-card rounded-2xl p-5 ${isCollapsed ? 'opacity-60 grayscale-[0.3]' : 'bg-white shadow-sm'}`}>
+                <div className={`glass-card rounded-[2rem] p-5 ${isCollapsed ? 'opacity-60 bg-slate-50 border-dashed' : 'bg-white shadow-sm hover:border-indigo-200'}`}>
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                         <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-3 mb-1">
+                            <div className="flex items-center gap-3 mb-2">
                                 <select 
                                     value={p.status} 
                                     onChange={(e) => onStatus(e.target.value)}
@@ -417,46 +501,69 @@
                                     <option value="Planeamento">Planeamento</option>
                                     <option value="Concluído">Concluído</option>
                                 </select>
-                                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">Prazo: {formatDate(p.end)}</span>
+                                <span className="text-[9px] font-bold text-slate-400 uppercase">Fim: {formatDate(p.end)}</span>
                             </div>
                             <h3 className="text-base font-black text-slate-900 truncate">
                                 <HighlightedText text={p.title} term={searchTerm} />
                             </h3>
                         </div>
 
-                        <div className="flex items-center gap-3">
-                            <div className="text-right hidden sm:block">
-                                <span className="text-[9px] font-black text-indigo-600 uppercase">{progress}% OK</span>
+                        <div className="flex items-center gap-2">
+                            <div className="text-right hidden sm:block mr-4">
+                                <span className="text-[9px] font-black text-indigo-600 uppercase tracking-tighter">{progress}% Completo</span>
                                 <div className="w-16 progress-bar-container mt-1"><div className="progress-bar-fill bg-indigo-500" style={{width: `${progress}%`}}></div></div>
                             </div>
-                            <button onClick={() => setIsCollapsed(!isCollapsed)} className="w-8 h-8 rounded-lg bg-slate-50 text-slate-400 flex items-center justify-center"><i className={`fas ${isCollapsed ? 'fa-chevron-down' : 'fa-chevron-up'}`}></i></button>
-                            <button onClick={onEdit} className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-500 flex items-center justify-center"><i className="fas fa-edit text-xs"></i></button>
-                            <button onClick={onDelete} className="w-8 h-8 rounded-lg bg-rose-50 text-rose-400 flex items-center justify-center"><i className="fas fa-trash-alt text-xs"></i></button>
+                            <button onClick={() => setIsCollapsed(!isCollapsed)} className="w-9 h-9 rounded-xl bg-slate-50 text-slate-400 flex items-center justify-center hover:bg-slate-100 transition-colors"><i className={`fas ${isCollapsed ? 'fa-chevron-down' : 'fa-chevron-up'}`}></i></button>
+                            <button onClick={onEdit} className="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-500 flex items-center justify-center hover:bg-indigo-100 transition-colors"><i className="fas fa-edit text-xs"></i></button>
+                            <button onClick={onDelete} className="w-9 h-9 rounded-xl bg-rose-50 text-rose-400 flex items-center justify-center hover:bg-rose-100 transition-colors"><i className="fas fa-trash-alt text-xs"></i></button>
                         </div>
                     </div>
 
                     {!isCollapsed && (
-                        <div className="mt-4 pt-4 border-t border-slate-50 animate-slide">
+                        <div className="mt-6 pt-6 border-t border-slate-50 animate-slide">
                             <div className="flex items-center justify-between mb-4">
-                                <h4 className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Etapas do Projeto</h4>
-                                <button onClick={onAddSub} className="text-[9px] font-black text-indigo-600 bg-indigo-50 px-3 py-1.5 rounded-lg uppercase hover:bg-indigo-600 hover:text-white transition-all">+ Nova Etapa</button>
+                                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                                    <i className="fas fa-list-check text-indigo-400"></i> Etapas e Histórico
+                                </h4>
+                                <button onClick={onAddSub} className="text-[9px] font-black text-white bg-slate-900 px-3 py-1.5 rounded-lg uppercase transition-all hover:bg-black">+ Nova Etapa</button>
                             </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div className="space-y-4">
                                 {p.subtasks?.map(sub => (
-                                    <div key={sub.id} className="flex items-center gap-3 p-3 bg-slate-50/50 rounded-xl border border-slate-100">
-                                        <input 
-                                            type="checkbox" 
-                                            checked={sub.completed} 
-                                            onChange={() => onToggleSub(sub.id)}
-                                            className="w-4 h-4 rounded-lg border-slate-300 text-indigo-600 cursor-pointer"
-                                        />
-                                        <span className={`text-xs font-bold flex-1 ${sub.completed ? 'line-through text-slate-300' : 'text-slate-600'}`}>
-                                            <HighlightedText text={sub.title} term={searchTerm} />
-                                        </span>
+                                    <div key={sub.id} className="bg-slate-50/50 p-4 rounded-2xl border border-slate-100 group/sub">
+                                        <div className="flex items-center gap-3 mb-3">
+                                            <input 
+                                                type="checkbox" 
+                                                checked={sub.completed} 
+                                                onChange={() => onToggleSub(sub.id)}
+                                                className="w-4 h-4 rounded-lg border-slate-300 text-indigo-600 cursor-pointer"
+                                            />
+                                            <span className={`text-xs font-bold flex-1 ${sub.completed ? 'line-through text-slate-300' : 'text-slate-700'}`}>
+                                                <HighlightedText text={sub.title} term={searchTerm} />
+                                            </span>
+                                            <button onClick={() => setActiveSubId(activeSubId === sub.id ? null : sub.id)} className="text-[9px] font-bold text-indigo-500 opacity-0 group-hover/sub:opacity-100 transition-all">
+                                                <i className="fas fa-plus"></i> NOTA
+                                            </button>
+                                        </div>
+                                        
+                                        {activeSubId === sub.id && (
+                                            <div className="mb-3 flex gap-2">
+                                                <input value={noteText} onChange={e => setNoteText(e.target.value)} type="text" placeholder="Registar atualização..." className="flex-1 p-2 text-[11px] border rounded-lg bg-white outline-none focus:ring-1 focus:ring-indigo-400"/>
+                                                <button onClick={() => { onAddNote(sub.id, noteText); setNoteText(""); setActiveSubId(null); }} className="bg-indigo-600 text-white px-3 py-1 rounded-lg text-[10px] font-bold">OK</button>
+                                            </div>
+                                        )}
+
+                                        <div className="space-y-1.5 border-l-2 border-slate-100 ml-2 pl-3">
+                                            {sub.notes?.map((n, idx) => (
+                                                <div key={idx} className="text-[10px] text-slate-500 py-1">
+                                                    <span className="font-bold text-[8px] text-slate-300 mr-2 uppercase">{n.time}</span>
+                                                    <HighlightedText text={n.text} term={searchTerm} />
+                                                </div>
+                                            ))}
+                                        </div>
                                     </div>
                                 ))}
                                 {(!p.subtasks || p.subtasks.length === 0) && (
-                                    <p className="text-[10px] text-slate-400 italic">Sem tarefas definidas.</p>
+                                    <p className="text-[10px] text-slate-400 italic text-center py-4 bg-slate-100/50 rounded-2xl">Aguardando definição de tarefas.</p>
                                 )}
                             </div>
                         </div>
