@@ -16,108 +16,150 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&display=swap');
         
         :root {
-            --primary: #4f46e5;
-            --bg-main: #f8fafc;
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --bg-main: #fcfdfe;
+            --card-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.04), 0 4px 6px -2px rgba(0, 0, 0, 0.02);
+            --accent-glow: 0 0 20px rgba(99, 102, 241, 0.1);
         }
 
         body {
             font-family: 'Inter', sans-serif;
             background-color: var(--bg-main);
-            color: #1e293b;
+            color: #0f172a;
             margin: 0;
             overflow-x: hidden;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.03) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(99, 102, 241, 0.03) 0px, transparent 50%);
         }
 
-        .hide-scrollbar::-webkit-scrollbar {
-            display: none;
-        }
-        .hide-scrollbar {
-            -ms-overflow-style: none;
-            scrollbar-width: none;
-        }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
         .glass-card {
             background: #ffffff;
-            border: 1px solid #e2e8f0;
-            transition: all 0.3s ease;
+            border: 1px solid #f1f5f9;
+            box-shadow: var(--card-shadow);
+            transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+        }
+
+        .glass-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 10px 10px -5px rgba(0, 0, 0, 0.02);
+            border-color: #e2e8f0;
         }
 
         .status-pill {
-            padding: 4px 12px;
-            border-radius: 6px;
+            padding: 5px 14px;
+            border-radius: 8px;
             font-size: 0.7rem;
-            font-weight: 700;
+            font-weight: 800;
+            letter-spacing: 0.025em;
             text-transform: uppercase;
+            box-shadow: inset 0 -1px 0 rgba(0,0,0,0.1);
         }
 
-        .status-Pendente { background: #fee2e2; color: #991b1b; }
-        .status-Andamento { background: #fef3c7; color: #92400e; }
-        .status-Planeamento { background: #e0f2fe; color: #075985; }
-        .status-Concluído { background: #dcfce7; color: #166534; }
+        .status-Pendente { background: #fee2e2; color: #ef4444; border: 1px solid #fecaca; }
+        .status-Andamento { background: #fffbeb; color: #f59e0b; border: 1px solid #fef3c7; }
+        .status-Planeamento { background: #eff6ff; color: #3b82f6; border: 1px solid #dbeafe; }
+        .status-Concluído { background: #ecfdf5; color: #10b981; border: 1px solid #d1fae5; }
 
         .progress-bar-container {
-            height: 8px;
+            height: 10px;
             background: #f1f5f9;
-            border-radius: 10px;
+            border-radius: 20px;
             overflow: hidden;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
         }
 
         .progress-bar-fill {
             height: 100%;
-            transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 20px;
+            background: linear-gradient(90deg, var(--primary) 0%, var(--primary-dark) 100%);
+            transition: width 1s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
 
         .sticky-header-container {
             position: sticky;
             top: 0;
             z-index: 40;
-            background-color: rgba(248, 250, 252, 0.95);
-            backdrop-filter: blur(12px);
-            padding-top: 0.75rem; 
-            padding-bottom: 0.5rem; 
+            background-color: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(16px);
+            padding-top: 1rem; 
+            padding-bottom: 0.75rem; 
             border-bottom: 1px solid transparent;
+            transition: all 0.3s ease;
         }
 
         .scrolled-header {
-            border-bottom-color: #e2e8f0;
-            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05);
-        }
-
-        .modal-backdrop {
-            background: rgba(15, 23, 42, 0.6);
-            backdrop-filter: blur(4px);
+            border-bottom-color: #f1f5f9;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.03);
+            background-color: rgba(255, 255, 255, 0.95);
         }
 
         @keyframes slideUp {
-            from { transform: translateY(20px); opacity: 0; }
+            from { transform: translateY(15px); opacity: 0; }
             to { transform: translateY(0); opacity: 1; }
         }
-        .animate-slide { animation: slideUp 0.3s ease-out; }
+        .animate-slide { animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
 
         .login-bg {
-            background: linear-gradient(135deg, #4f46e5 0%, #312e81 100%);
+            background: radial-gradient(circle at top left, #6366f1, #4f46e5);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .login-bg::after {
+            content: '';
+            position: absolute;
+            width: 100%; height: 100%;
+            background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+        }
+
+        .btn-vibrant {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2);
+        }
+        .btn-vibrant:hover {
+            box-shadow: 0 8px 20px rgba(79, 70, 229, 0.3);
+            transform: scale(1.02);
         }
 
         .note-input {
-            background: #ffffff;
+            background: #f8fafc;
             border: 1px solid #e2e8f0;
             width: 100%;
             resize: none;
-            font-size: 11px;
-            color: #1e293b;
-            line-height: 1.5;
-            padding: 10px;
+            font-size: 12px;
+            color: #334155;
+            padding: 12px;
             outline: none;
-            border-radius: 12px;
-            box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.02);
+            border-radius: 14px;
+            transition: all 0.2s ease;
+        }
+        .note-input:focus {
+            background: #ffffff;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
         }
 
         .search-highlight {
             background-color: #fef08a;
             color: #854d0e;
-            padding: 0 2px;
-            border-radius: 2px;
+            padding: 1px 3px;
+            border-radius: 4px;
             font-weight: 700;
+        }
+
+        .input-elegant {
+            transition: all 0.2s ease;
+            border: 1px solid #e2e8f0;
+        }
+        .input-elegant:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
         }
     </style>
 </head>
@@ -295,19 +337,20 @@
                         labels: ['Em Execução', 'Pendente', 'Planeamento', 'Finalizados'],
                         datasets: [{ 
                             data: [a, p, pl, c], 
-                            backgroundColor: ['#fef3c7', '#fee2e2', '#e0f2fe', '#dcfce7'], 
-                            hoverBackgroundColor: ['#fde68a', '#fecaca', '#bae6fd', '#bbf7d0'],
-                            borderWidth: 0 
+                            backgroundColor: ['#fbbf24', '#f87171', '#60a5fa', '#34d399'], 
+                            hoverBackgroundColor: ['#f59e0b', '#ef4444', '#3b82f6', '#10b981'],
+                            borderWidth: 0,
+                            hoverOffset: 10
                         }]
                     },
                     options: { 
                         responsive: true, 
                         maintainAspectRatio: false, 
-                        cutout: '80%', 
+                        cutout: '78%', 
                         plugins: { 
                             legend: { 
                                 position: 'bottom',
-                                labels: { usePointStyle: true, font: { weight: 'bold', family: 'Inter', size: 10 } }
+                                labels: { usePointStyle: true, padding: 20, font: { weight: '600', family: 'Inter', size: 10 } }
                             } 
                         } 
                     }
@@ -322,7 +365,7 @@
                     await setPersistence(auth, browserSessionPersistence);
                     await signInWithEmailAndPassword(auth, email, password);
                 } catch (err) {
-                    setLoginError("Acesso negado. Verifique os seus dados.");
+                    setLoginError("Credenciais inválidas ou sem acesso ao projeto.");
                 } finally {
                     setIsLoggingIn(false);
                 }
@@ -330,14 +373,8 @@
 
             const handleLogout = async () => {
                 if (window.confirm("Deseja encerrar a sessão com segurança?")) {
-                    try {
-                        await signOut(auth);
-                        setUser(null);
-                        setEmail('');
-                        setPassword('');
-                    } catch (err) {
-                        console.error("Erro ao sair:", err);
-                    }
+                    try { await signOut(auth); setUser(null); setEmail(''); setPassword(''); } 
+                    catch (err) { console.error("Erro ao sair:", err); }
                 }
             };
 
@@ -345,14 +382,12 @@
                 try {
                     const dataStr = JSON.stringify(projects, null, 2);
                     const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
-                    const exportFileDefaultName = `backup_projetos_ansr_${new Date().toISOString().split('T')[0]}.json`;
+                    const exportFileDefaultName = `backup_ansr_${new Date().toISOString().split('T')[0]}.json`;
                     const linkElement = document.createElement('a');
                     linkElement.setAttribute('href', dataUri);
                     linkElement.setAttribute('download', exportFileDefaultName);
                     linkElement.click();
-                } catch (error) {
-                    console.error("Erro ao gerar backup:", error);
-                }
+                } catch (error) { console.error("Erro backup:", error); }
             };
 
             const importBackup = async (e) => {
@@ -362,44 +397,16 @@
                 reader.onload = async (event) => {
                     try {
                         const importedData = JSON.parse(event.target.result);
-                        if (!Array.isArray(importedData)) throw new Error("Formato incorreto.");
-                        if (!window.confirm(`Vai importar ${importedData.length} projetos. Confirma?`)) {
-                            e.target.value = null;
-                            return;
-                        }
-                        let count = 0;
+                        if (!Array.isArray(importedData)) throw new Error("Formato inválido.");
+                        if (!window.confirm(`Importar ${importedData.length} projetos?`)) { e.target.value = null; return; }
                         for (const proj of importedData) {
-                            try {
-                                const { id, ...projectData } = proj;
-                                await setDoc(doc(db, DB_COLLECTION, id || Date.now().toString()), projectData);
-                                count++;
-                            } catch (err) { console.error("Erro importação:", err); }
+                            const { id, ...projectData } = proj;
+                            await setDoc(doc(db, DB_COLLECTION, id || Date.now().toString()), projectData);
                         }
-                        alert(`Concluído! ${count} projetos importados.`);
-                    } catch (error) {
-                        console.error("Erro backup:", error);
-                        alert("Erro ao ler o ficheiro.");
-                    }
+                    } catch (error) { alert("Erro ao importar ficheiro."); }
                     e.target.value = null;
                 };
                 reader.readAsText(file);
-            };
-
-            const triggerImport = () => fileInputRef.current && fileInputRef.current.click();
-
-            const closeTaskModal = () => {
-                setIsTaskModalOpen(false);
-                setEditingId(null);
-                setTaskData({ title: '', start: '', end: '', priority: 'Média', owner: '', team: '', company: '' });
-            };
-
-            const openEditTask = (p) => {
-                setEditingId(p.id);
-                setTaskData({
-                    title: p.title || '', start: p.start || '', end: p.end || '',
-                    priority: p.priority || 'Média', owner: p.owner || '', team: p.team || '', company: p.company || ''
-                });
-                setIsTaskModalOpen(true);
             };
 
             const saveProject = async (e) => {
@@ -409,14 +416,11 @@
                     if (editingId) await updateDoc(doc(db, DB_COLLECTION, editingId), taskData);
                     else await addDoc(collection(db, DB_COLLECTION), { ...taskData, status: 'Pendente', subtasks: [], createdAt: serverTimestamp(), createdBy: user.uid });
                     closeTaskModal();
-                } catch (err) { 
-                    console.error("Erro salvar:", err);
-                    alert("Erro ao guardar. Verifique a ligação.");
-                }
+                } catch (err) { alert("Erro ao salvar dados."); }
             };
 
             const deleteProject = async (id) => {
-                if (!user || !window.confirm("Eliminar este projeto permanentemente?")) return;
+                if (!user || !window.confirm("Eliminar projeto permanentemente?")) return;
                 try { await deleteDoc(doc(db, DB_COLLECTION, id)); } catch(err) { alert("Erro ao eliminar."); }
             };
 
@@ -437,29 +441,7 @@
                     await updateDoc(doc(db, DB_COLLECTION, p.id), { subtasks: newSubs, status: p.status === 'Pendente' || p.status === 'Planeamento' ? 'Andamento' : p.status });
                     setIsSubtaskModalOpen(false);
                     setSubtaskData({ parentId: '', subId: null, title: '', note: '' });
-                } catch(err) { alert("Erro adicionar tarefa."); }
-            };
-
-            const editSubtask = async (projectId, subtaskId, newTitle) => {
-                if (!newTitle.trim()) return;
-                const project = projects.find(p => p.id === projectId);
-                if (!project) return;
-                const newSubtasks = project.subtasks.map(sub => sub.id === subtaskId ? { ...sub, title: newTitle } : sub);
-                try { await updateDoc(doc(db, DB_COLLECTION, projectId), { subtasks: newSubtasks }); } catch(err) { alert("Erro editar."); }
-            };
-
-            const deleteSubtask = async (projectId, subtaskId) => {
-                if (!window.confirm("Remover permanentemente?")) return;
-                const project = projects.find(p => p.id === projectId);
-                if (!project) return;
-                const newSubtasks = project.subtasks.filter(sub => sub.id !== subtaskId);
-                const allDone = newSubtasks.length > 0 && newSubtasks.every(s => s.completed);
-                try {
-                    await updateDoc(doc(db, DB_COLLECTION, projectId), { 
-                        subtasks: newSubtasks,
-                        status: allDone ? 'Concluído' : (project.status === 'Concluído' && newSubtasks.length > 0 ? 'Andamento' : project.status)
-                    });
-                } catch(err) { alert("Erro remover."); }
+                } catch(err) { alert("Erro ao adicionar tarefa."); }
             };
 
             const toggleSub = async (tId, sId) => {
@@ -467,71 +449,48 @@
                 const newSubs = p.subtasks.map(s => {
                     if (s.id === sId) {
                         const isCompleted = !s.completed;
-                        const newNotes = (s.notes || []).map(n => ({ ...n, completed: isCompleted }));
-                        return { ...s, completed: isCompleted, notes: newNotes, progress: isCompleted ? 100 : 0 };
+                        return { ...s, completed: isCompleted, notes: (s.notes || []).map(n => ({ ...n, completed: isCompleted })), progress: isCompleted ? 100 : 0 };
                     }
                     return s;
                 });
                 const allDone = newSubs.length > 0 && newSubs.every(s => s.completed);
                 try { await updateDoc(doc(db, DB_COLLECTION, tId), { subtasks: newSubs, status: allDone ? 'Concluído' : (p.status === 'Concluído' ? 'Andamento' : p.status) });
-                } catch(err) { alert("Erro toggle."); }
-            };
-
-            const toggleHistoryNote = async (projectId, subtaskId, noteIndex) => {
-                const project = projects.find(p => p.id === projectId);
-                if (!project) return;
-                const newSubtasks = project.subtasks.map(sub => {
-                    if (sub.id === subtaskId) {
-                        const newNotes = [...(sub.notes || [])];
-                        newNotes[noteIndex] = { ...newNotes[noteIndex], completed: !newNotes[noteIndex].completed };
-                        const completedCount = newNotes.filter(n => n.completed).length;
-                        const newProgress = newNotes.length > 0 ? Math.round((completedCount / newNotes.length) * 100) : 0;
-                        return { ...sub, notes: newNotes, progress: newProgress, completed: newProgress === 100 };
-                    }
-                    return sub;
-                });
-                const allDone = newSubtasks.length > 0 && newSubtasks.every(s => s.completed);
-                try { await updateDoc(doc(db, DB_COLLECTION, projectId), { subtasks: newSubtasks, status: allDone ? 'Concluído' : (project.status === 'Concluído' ? 'Andamento' : project.status) });
-                } catch(err) { alert("Erro nota."); }
+                } catch(err) { console.error(err); }
             };
 
             const addHistoryNote = async (projectId, subtaskId, text) => {
                 if (!text.trim()) return;
                 const project = projects.find(p => p.id === projectId);
-                if (!project) return;
                 const time = new Date().toLocaleString('pt-PT', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
                 const newSubtasks = project.subtasks.map(sub => {
                     if (sub.id === subtaskId) {
                         const newNotes = [...(sub.notes || []), { text, time, completed: false }];
                         const completedCount = newNotes.filter(n => n.completed).length;
-                        const newProgress = newNotes.length > 0 ? Math.round((completedCount / newNotes.length) * 100) : 0;
+                        return { ...sub, notes: newNotes, progress: Math.round((completedCount / newNotes.length) * 100) };
+                    }
+                    return sub;
+                });
+                try { await updateDoc(doc(db, DB_COLLECTION, projectId), { subtasks: newSubtasks }); } catch(err) { console.error(err); }
+            };
+
+            const toggleHistoryNote = async (projectId, subtaskId, noteIndex) => {
+                const project = projects.find(p => p.id === projectId);
+                const newSubtasks = project.subtasks.map(sub => {
+                    if (sub.id === subtaskId) {
+                        const newNotes = [...(sub.notes || [])];
+                        newNotes[noteIndex] = { ...newNotes[noteIndex], completed: !newNotes[noteIndex].completed };
+                        const completedCount = newNotes.filter(n => n.completed).length;
+                        const newProgress = Math.round((completedCount / newNotes.length) * 100);
                         return { ...sub, notes: newNotes, progress: newProgress, completed: newProgress === 100 };
                     }
                     return sub;
                 });
-                try { await updateDoc(doc(db, DB_COLLECTION, projectId), { subtasks: newSubtasks }); } catch(err) { alert("Erro add nota."); }
-            };
-
-            const editHistoryNote = async (projectId, subtaskId, noteIndex, newText) => {
-                if (!newText.trim()) return;
-                const project = projects.find(p => p.id === projectId);
-                if (!project) return;
-                const editTime = new Date().toLocaleString('pt-PT', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
-                const newSubtasks = project.subtasks.map(sub => {
-                    if (sub.id === subtaskId) {
-                        const newNotes = [...(sub.notes || [])];
-                        newNotes[noteIndex] = { ...newNotes[noteIndex], text: newText, lastEdit: editTime };
-                        return { ...sub, notes: newNotes };
-                    }
-                    return sub;
-                });
-                try { await updateDoc(doc(db, DB_COLLECTION, projectId), { subtasks: newSubtasks }); } catch(err) { alert("Erro edit nota."); }
+                try { await updateDoc(doc(db, DB_COLLECTION, projectId), { subtasks: newSubtasks }); } catch(err) { console.error(err); }
             };
 
             const deleteHistoryNote = async (projectId, subtaskId, noteIndex) => {
-                if (!window.confirm("Remover nota?")) return;
+                if (!window.confirm("Remover registo?")) return;
                 const project = projects.find(p => p.id === projectId);
-                if (!project) return;
                 const newSubtasks = project.subtasks.map(sub => {
                     if (sub.id === subtaskId) {
                         const newNotes = [...(sub.notes || [])];
@@ -542,7 +501,7 @@
                     }
                     return sub;
                 });
-                try { await updateDoc(doc(db, DB_COLLECTION, projectId), { subtasks: newSubtasks }); } catch(err) { alert("Erro delete nota."); }
+                try { await updateDoc(doc(db, DB_COLLECTION, projectId), { subtasks: newSubtasks }); } catch(err) { console.error(err); }
             };
 
             const stats = {
@@ -554,129 +513,124 @@
                 perc: projects.length ? Math.round((projects.filter(p => p.status === 'Concluído').length / projects.length) * 100) : 0
             };
 
-            if (authLoading) return <div className="h-screen flex items-center justify-center bg-indigo-600 text-white font-bold tracking-widest uppercase text-center p-4">Acessando Sistema em Cloud Security...</div>;
+            const closeTaskModal = () => {
+                setIsTaskModalOpen(false);
+                setEditingId(null);
+                setTaskData({ title: '', start: '', end: '', priority: 'Média', owner: '', team: '', company: '' });
+            };
+
+            if (authLoading) return <div className="h-screen flex flex-col items-center justify-center bg-slate-950 text-white font-bold tracking-widest uppercase gap-4"><div className="w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>Acessando Ambiente Cloud...</div>;
 
             if (!user) {
                 return (
                     <div className="min-h-screen login-bg flex items-center justify-center p-4">
-                        <div className="bg-white p-10 rounded-3xl shadow-2xl w-full max-w-md animate-slide text-center">
-                            <div className="bg-indigo-100 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 text-indigo-600 text-2xl"><i className="fas fa-lock"></i></div>
-                            <h2 className="text-2xl font-black text-slate-900">Acesso Restrito</h2>
-                            <p className="text-slate-500 text-sm mb-8">ANSR - IDW</p>
-                            <form onSubmit={handleLogin} className="space-y-4">
-                                <input type="email" required value={email} onChange={e => setEmail(e.target.value)} className="w-full p-4 bg-slate-50 border border-slate-100 rounded-xl outline-none" placeholder="exemplo@ansr.pt"/>
-                                <input type="password" required value={password} onChange={e => setPassword(e.target.value)} className="w-full p-4 bg-slate-50 border border-slate-100 rounded-xl outline-none" placeholder="********"/>
-                                {loginError && <p className="text-red-500 text-xs font-bold bg-red-50 p-2 rounded-lg">{loginError}</p>}
-                                <button type="submit" disabled={isLoggingIn} className="w-full bg-indigo-600 text-white py-4 rounded-xl font-bold hover:bg-indigo-700 shadow-lg">
-                                    {isLoggingIn ? 'Verificando...' : 'Entrar no Sistema'}
+                        <div className="bg-white p-10 rounded-[2.5rem] shadow-2xl w-full max-w-md animate-slide text-center relative z-10">
+                            <div className="bg-indigo-600 w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-6 text-white text-3xl shadow-lg shadow-indigo-200"><i className="fas fa-project-diagram"></i></div>
+                            <h2 className="text-3xl font-black text-slate-900 tracking-tight">Sistema IDW</h2>
+                            <p className="text-slate-500 text-sm mb-10 font-medium">Gestão de Projetos Corporativos</p>
+                            <form onSubmit={handleLogin} className="space-y-5">
+                                <input type="email" required value={email} onChange={e => setEmail(e.target.value)} className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50 transition-all" placeholder="E-mail de acesso"/>
+                                <input type="password" required value={password} onChange={e => setPassword(e.target.value)} className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50 transition-all" placeholder="Senha"/>
+                                {loginError && <p className="text-red-500 text-xs font-bold bg-red-50 p-3 rounded-xl">{loginError}</p>}
+                                <button type="submit" disabled={isLoggingIn} className="w-full btn-vibrant text-white py-4 rounded-2xl font-black text-sm uppercase tracking-widest">
+                                    {isLoggingIn ? 'Autenticando...' : 'Entrar no Dashboard'}
                                 </button>
                             </form>
-                            <div className="mt-8 border-t border-slate-100 pt-6">
-                                <p className="text-xs text-slate-400 font-bold tracking-widest opacity-70 italic">By Wilson Costa - IDW 2026</p>
-                            </div>
+                            <p className="mt-10 text-[10px] text-slate-400 font-bold tracking-widest uppercase">© 2026 Wilson Costa • IDW Premium</p>
                         </div>
                     </div>
                 );
             }
 
             return (
-                <div className="bg-slate-50 min-h-screen text-slate-800 flex flex-col">
+                <div className="bg-slate-50 min-h-screen text-slate-900 flex flex-col">
                     <div className={`sticky-header-container px-4 md:px-8 ${isScrolled ? 'scrolled-header' : ''}`}>
                         <div className="max-w-7xl mx-auto">
-                            <header className="flex flex-col md:flex-row justify-between items-start md:items-center mb-3 gap-3">
-                                <div className="flex flex-col md:flex-row md:items-center gap-4 w-full md:w-auto">
-                                    <div>
-                                        <h1 className="text-2xl md:text-3xl font-bold text-slate-900 tracking-tight">Dashboard de Projetos</h1>
-                                        <p className="text-slate-500 font-medium text-xs md:text-sm">IDW - Gestão 2026 • <span className="text-indigo-600 font-bold">{user.email}</span></p>
-                                    </div>
-                                    <div className="relative flex-1 max-w-sm">
-                                        <i className="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                            <header className="flex flex-col xl:flex-row justify-between items-start xl:items-center mb-4 gap-4">
+                                <div>
+                                    <h1 className="text-3xl font-black text-slate-950 tracking-tighter">Projetos <span className="text-indigo-600">IDW</span></h1>
+                                    <p className="text-slate-500 font-bold text-[10px] uppercase tracking-widest opacity-80 mt-1">Ambiente Cloud Ativo • <span className="text-indigo-600">{user.email}</span></p>
+                                </div>
+                                
+                                <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3 w-full xl:w-auto">
+                                    <div className="relative flex-grow max-w-lg">
+                                        <i className="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
                                         <input 
                                             type="text" 
-                                            placeholder="Procurar projeto, tarefa ou nota..." 
+                                            placeholder="Procurar projeto, tarefa ou histórico..." 
                                             value={searchTerm} 
                                             onChange={(e) => setSearchTerm(e.target.value)}
-                                            className="w-full pl-9 pr-4 py-1.5 bg-white border border-slate-200 rounded-xl text-xs outline-none focus:ring-2 focus:ring-indigo-500 transition-all shadow-sm"
+                                            className="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-2xl text-xs outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-400 transition-all shadow-sm"
                                         />
                                     </div>
-                                </div>
-                                <div className="flex overflow-x-auto hide-scrollbar gap-2 w-full md:w-auto pb-1">
-                                    <button onClick={exportBackup} className="bg-emerald-50 border border-emerald-200 text-emerald-700 px-3 py-1.5 rounded-xl font-bold hover:bg-emerald-100 text-xs flex items-center gap-1.5 flex-shrink-0"><i className="fas fa-file-download"></i> Exportar</button>
-                                    <input type="file" ref={fileInputRef} onChange={importBackup} accept=".json" style={{ display: 'none' }} />
-                                    <button onClick={triggerImport} className="bg-blue-50 border border-blue-200 text-blue-700 px-3 py-1.5 rounded-xl font-bold hover:bg-blue-100 text-xs flex items-center gap-1.5 flex-shrink-0"><i className="fas fa-file-upload"></i> Importar</button>
-                                    
-                                    <button onClick={() => setGlobalCollapse(prev => ({ collapsed: !prev.collapsed, count: prev.count + 1 }))} className="bg-white border border-slate-200 text-slate-600 px-3 py-1.5 rounded-xl font-bold hover:bg-slate-50 text-xs flex items-center gap-1.5 flex-shrink-0">
-                                        <i className={globalCollapse.collapsed ? 'fas fa-expand text-indigo-500' : 'fas fa-compress'}></i> {globalCollapse.collapsed ? 'Expandir Ativos' : 'Minimizar Ativos'}
-                                    </button>
-                                    
-                                    <button onClick={() => setHideCompleted(!hideCompleted)} className="bg-white border border-slate-200 text-slate-600 px-3 py-1.5 rounded-xl font-bold hover:bg-slate-50 text-xs flex items-center gap-1.5 flex-shrink-0">
-                                        <i className={hideCompleted ? 'fas fa-expand text-indigo-500' : 'fas fa-compress'}></i> {hideCompleted ? 'Expandir Finalizados' : 'Minimizar Finalizados'}
-                                    </button>
-                                    
-                                    <button onClick={() => setIsTaskModalOpen(true)} className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-1.5 rounded-xl font-bold shadow-sm text-xs flex items-center gap-1.5 flex-shrink-0"><i className="fas fa-plus"></i> Novo Projeto</button>
-                                    <button onClick={handleLogout} className="bg-red-50 text-red-600 px-3 py-1.5 rounded-xl font-bold hover:bg-red-600 hover:text-white text-xs flex items-center gap-1.5 flex-shrink-0"><i className="fas fa-sign-out-alt"></i> Sair</button>
+                                    <div className="flex gap-2 overflow-x-auto hide-scrollbar pb-1">
+                                        <button onClick={exportBackup} className="bg-white text-slate-700 px-4 py-3 rounded-2xl font-bold hover:bg-slate-50 text-[11px] flex items-center gap-2 flex-shrink-0 border border-slate-200"><i className="fas fa-download text-emerald-500"></i> Backup</button>
+                                        <button onClick={() => fileInputRef.current.click()} className="bg-white text-slate-700 px-4 py-3 rounded-2xl font-bold hover:bg-slate-50 text-[11px] flex items-center gap-2 flex-shrink-0 border border-slate-200"><i className="fas fa-upload text-blue-500"></i> Importar</button>
+                                        <input type="file" ref={fileInputRef} onChange={importBackup} accept=".json" className="hidden" />
+                                        <button onClick={() => setIsTaskModalOpen(true)} className="btn-vibrant text-white px-6 py-3 rounded-2xl font-black text-[11px] flex items-center gap-2 flex-shrink-0 uppercase tracking-widest"><i className="fas fa-plus"></i> Novo</button>
+                                        <button onClick={handleLogout} className="bg-red-50 text-red-600 px-4 py-3 rounded-2xl font-bold hover:bg-red-600 hover:text-white text-[11px] flex-shrink-0 transition-all"><i className="fas fa-power-off"></i></button>
+                                    </div>
                                 </div>
                             </header>
 
-                            <div className="flex overflow-x-auto hide-scrollbar gap-2 mb-1 pb-1 w-full">
-                                <StatCard label="Total" value={stats.total} borderColor="border-slate-200" />
-                                <StatCard label="Em Execução" value={stats.progress} borderColor="border-amber-400" textColor="text-amber-600" />
-                                <StatCard label="Pendente" value={stats.pending} borderColor="border-red-400" textColor="text-red-600" />
-                                <StatCard label="Planeamento" value={stats.planning} borderColor="border-sky-400" textColor="text-sky-600" />
-                                <StatCard label="Finalizados" value={stats.completed} borderColor="border-green-500" textColor="text-green-600" />
-                                <div className="glass-card px-3 py-2 md:px-4 md:py-2.5 rounded-xl border-l-4 border-indigo-500 shadow-sm flex-shrink-0 min-w-[140px] lg:min-w-0 lg:flex-1">
-                                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">ENTREGÁVEL</p>
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-base md:text-lg font-black text-indigo-600">{stats.perc}%</span>
-                                        <div className="flex-1 progress-bar-container"><div className="progress-bar-fill bg-indigo-600" style={{width: `${stats.perc}%`}}></div></div>
+                            <div className="flex overflow-x-auto hide-scrollbar gap-4 mb-4 pb-2 w-full">
+                                <StatCard label="Total" value={stats.total} icon="fa-layer-group" color="indigo" />
+                                <StatCard label="Execução" value={stats.progress} icon="fa-bolt" color="amber" />
+                                <StatCard label="Pendentes" value={stats.pending} icon="fa-clock" color="red" />
+                                <StatCard label="Finalizados" value={stats.completed} icon="fa-check-double" color="emerald" />
+                                <div className="glass-card px-5 py-4 rounded-3xl flex-shrink-0 min-w-[180px] lg:flex-1 relative overflow-hidden group">
+                                    <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:scale-110 transition-transform"><i className="fas fa-chart-line text-5xl"></i></div>
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Entregáveis</p>
+                                    <div className="flex items-end gap-3">
+                                        <span className="text-2xl font-black text-indigo-600">{stats.perc}%</span>
+                                        <div className="flex-1 progress-bar-container mb-2"><div className="progress-bar-fill" style={{width: `${stats.perc}%`}}></div></div>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <main className="max-w-7xl mx-auto px-4 md:px-8 py-4 flex-grow w-full">
-                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                            <div className="lg:col-span-8 space-y-6">
+                    <main className="max-w-7xl mx-auto px-4 md:px-8 py-6 flex-grow w-full">
+                        <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
+                            <div className="xl:col-span-8 space-y-6">
                                 {filteredProjects.map(p => (
                                     <ProjectCard 
                                         key={p.id} p={p} 
                                         isCompact={hideCompleted && p.status === 'Concluído'}
                                         globalCollapse={globalCollapse} 
                                         searchTerm={searchTerm}
-                                        onEdit={() => openEditTask(p)}
+                                        onEdit={() => { setEditingId(p.id); setTaskData(p); setIsTaskModalOpen(true); }}
                                         onDelete={() => deleteProject(p.id)}
                                         onStatus={(s) => updateStatus(p.id, s)}
                                         onToggleSub={(sId) => toggleSub(p.id, sId)}
-                                        onEditSubtask={(sId, nTitle) => editSubtask(p.id, sId, nTitle)}
-                                        onDeleteSubtask={(sId) => deleteSubtask(p.id, sId)}
                                         onAddHistoryNote={(sId, txt) => addHistoryNote(p.id, sId, txt)}
-                                        onEditHistoryNote={(sId, nIdx, txt) => editHistoryNote(p.id, sId, nIdx, txt)}
-                                        onDeleteHistoryNote={(sId, nIdx) => deleteHistoryNote(p.id, sId, nIdx)}
                                         onToggleHistoryNote={(sId, nIdx) => toggleHistoryNote(p.id, sId, nIdx)}
+                                        onDeleteHistoryNote={(sId, nIdx) => deleteHistoryNote(p.id, sId, nIdx)}
                                         onAddSub={() => { setSubtaskData({ parentId: p.id, subId: null, title: '', note: '' }); setIsSubtaskModalOpen(true); }}
                                     />
                                 ))}
                                 {filteredProjects.length === 0 && !loading && (
-                                    <div className="text-center py-20 bg-white rounded-3xl border border-dashed text-slate-400 font-medium">
-                                        {searchTerm ? 'Nenhum projeto, tarefa ou nota corresponde à pesquisa.' : 'Nenhum projeto encontrado.'}
+                                    <div className="text-center py-32 bg-white rounded-[3rem] border-2 border-dashed border-slate-100 flex flex-col items-center">
+                                        <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center text-slate-200 text-3xl mb-4"><i className="fas fa-search"></i></div>
+                                        <p className="text-slate-400 font-bold uppercase tracking-widest text-xs">Nenhum resultado para "{searchTerm}"</p>
                                     </div>
                                 )}
                             </div>
-                            <div className="lg:col-span-4 space-y-6">
-                                <div className="glass-card p-6 rounded-3xl sticky top-[160px] shadow-sm">
-                                    <h2 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2"><i className="fas fa-chart-pie text-indigo-500"></i> Distribuição Atual</h2>
-                                    <div className="relative h-56 mb-8"><canvas ref={chartRef}></canvas></div>
-                                    <div className="mt-8 pt-6 border-t border-slate-100">
-                                        <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest text-center mb-4 italic">Próximos Prazos</h3>
-                                        <div className="space-y-3">
+                            
+                            <div className="xl:col-span-4 space-y-8">
+                                <div className="glass-card p-8 rounded-[2.5rem] sticky top-[180px] border-indigo-50 shadow-indigo-100/20">
+                                    <h2 className="text-xl font-black text-slate-900 mb-8 flex items-center gap-3"><i className="fas fa-chart-pie text-indigo-500"></i> Visão de Status</h2>
+                                    <div className="relative h-64 mb-8"><canvas ref={chartRef}></canvas></div>
+                                    <div className="pt-8 border-t border-slate-50">
+                                        <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-center mb-6">Alertas de Entrega</h3>
+                                        <div className="space-y-4">
                                             {projects.filter(p => p.status !== 'Concluído' && p.end).sort((a, b) => new Date(a.end) - new Date(b.end)).slice(0, 3).map(p => (
-                                                <div key={p.id} className="p-3 bg-slate-50 rounded-xl flex justify-between items-center border border-slate-100 group">
+                                                <div key={p.id} className="p-4 bg-slate-50/50 rounded-2xl flex justify-between items-center border border-slate-100 hover:border-amber-200 transition-all group">
                                                     <div className="min-w-0">
-                                                        <p className="text-xs font-bold truncate pr-2 text-slate-700">{p.title}</p>
-                                                        <p className="text-[10px] text-slate-400 font-medium">Fim: {formatDate(p.end)}</p>
+                                                        <p className="text-xs font-black truncate text-slate-800 group-hover:text-amber-700 transition-colors">{p.title}</p>
+                                                        <p className="text-[10px] text-slate-400 font-bold mt-1 uppercase tracking-tighter">Termina: {formatDate(p.end)}</p>
                                                     </div>
-                                                    <i className="fas fa-clock text-amber-400 text-xs"></i>
+                                                    <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center text-amber-600"><i className="fas fa-hourglass-half text-[10px] animate-pulse"></i></div>
                                                 </div>
                                             ))}
                                         </div>
@@ -686,29 +640,40 @@
                         </div>
                     </main>
 
-                    <footer className="py-12 text-center text-slate-400 text-xs font-bold opacity-50 tracking-widest italic">By Wilson Costa - IDW - 2026</footer>
+                    <footer className="py-16 text-center">
+                        <div className="flex justify-center gap-8 mb-4 text-slate-300 text-xl opacity-50">
+                            <i className="fab fa-react"></i>
+                            <i className="fas fa-fire text-orange-400"></i>
+                            <i className="fas fa-cloud text-sky-400"></i>
+                        </div>
+                        <p className="text-slate-400 text-[10px] font-black tracking-[0.3em] uppercase italic">Design & Cloud Engineering by Wilson Costa - IDW 2026</p>
+                    </footer>
 
+                    { }
                     {isTaskModalOpen && (
                         <div className="fixed inset-0 z-50 modal-backdrop flex items-center justify-center p-4">
-                            <div className="bg-white rounded-3xl w-full max-w-2xl p-8 animate-slide overflow-y-auto max-h-[90vh] shadow-2xl">
-                                <h3 className="text-2xl font-black mb-6">{editingId ? 'Editar Projeto' : 'Novo Projeto'}</h3>
-                                <form onSubmit={saveProject} className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
-                                    <div className="space-y-4">
-                                        <input required type="text" placeholder="Título" value={taskData.title} onChange={e => setTaskData({...taskData, title: e.target.value})} className="w-full p-3 bg-slate-50 border rounded-xl outline-none"/>
-                                        <div className="grid grid-cols-2 gap-2">
-                                            <input required type="date" value={taskData.start} onChange={e => setTaskData({...taskData, start: e.target.value})} className="p-2 bg-slate-50 border rounded-xl text-xs outline-none"/>
-                                            <input required type="date" value={taskData.end} onChange={e => setTaskData({...taskData, end: e.target.value})} className="p-2 bg-slate-50 border rounded-xl text-xs outline-none"/>
+                            <div className="bg-white rounded-[3rem] w-full max-w-2xl p-10 animate-slide overflow-y-auto max-h-[90vh] shadow-2xl relative">
+                                <button onClick={closeTaskModal} className="absolute top-8 right-8 text-slate-300 hover:text-red-500 transition-colors"><i className="fas fa-times text-2xl"></i></button>
+                                <h3 className="text-3xl font-black mb-10 tracking-tighter">{editingId ? 'Editar Registo' : 'Novo Projeto'}</h3>
+                                <form onSubmit={saveProject} className="grid grid-cols-1 md:grid-cols-2 gap-8 text-sm">
+                                    <div className="space-y-5">
+                                        <label className="text-[10px] font-black uppercase text-slate-400 ml-2 tracking-widest">Informação Básica</label>
+                                        <input required type="text" placeholder="Título do Projeto" value={taskData.title} onChange={e => setTaskData({...taskData, title: e.target.value})} className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:border-indigo-400 focus:bg-white transition-all"/>
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <input required type="date" value={taskData.start} onChange={e => setTaskData({...taskData, start: e.target.value})} className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none"/>
+                                            <input required type="date" value={taskData.end} onChange={e => setTaskData({...taskData, end: e.target.value})} className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none"/>
                                         </div>
-                                        <select value={taskData.priority} onChange={e => setTaskData({...taskData, priority: e.target.value})} className="w-full p-3 bg-slate-50 border rounded-xl outline-none"><option>Baixa</option><option>Média</option><option>Alta</option></select>
+                                        <select value={taskData.priority} onChange={e => setTaskData({...taskData, priority: e.target.value})} className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none font-bold text-slate-600"><option>Baixa</option><option>Média</option><option>Alta</option></select>
                                     </div>
-                                    <div className="space-y-4">
-                                        <input type="text" placeholder="Dono" value={taskData.owner} onChange={e => setTaskData({...taskData, owner: e.target.value})} className="w-full p-3 bg-slate-50 border rounded-xl outline-none"/>
-                                        <input type="text" placeholder="Equipa" value={taskData.team} onChange={e => setTaskData({...taskData, team: e.target.value})} className="w-full p-3 bg-slate-50 border rounded-xl outline-none"/>
-                                        <input type="text" placeholder="Empresa" value={taskData.company} onChange={e => setTaskData({...taskData, company: e.target.value})} className="w-full p-3 bg-slate-50 border rounded-xl outline-none"/>
+                                    <div className="space-y-5">
+                                        <label className="text-[10px] font-black uppercase text-slate-400 ml-2 tracking-widest">Responsabilidades</label>
+                                        <input type="text" placeholder="Project Manager / Dono" value={taskData.owner} onChange={e => setTaskData({...taskData, owner: e.target.value})} className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:border-indigo-400 transition-all"/>
+                                        <input type="text" placeholder="Equipa Responsável" value={taskData.team} onChange={e => setTaskData({...taskData, team: e.target.value})} className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:border-indigo-400 transition-all"/>
+                                        <input type="text" placeholder="Empresa / Cliente" value={taskData.company} onChange={e => setTaskData({...taskData, company: e.target.value})} className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:border-indigo-400 transition-all"/>
                                     </div>
-                                    <div className="col-span-full pt-4 flex gap-2">
-                                        <button type="button" onClick={closeTaskModal} className="flex-1 py-3 text-slate-400 font-bold hover:bg-slate-100 rounded-xl">Cancelar</button>
-                                        <button type="submit" className="flex-1 py-3 bg-indigo-600 text-white rounded-xl font-bold shadow-lg hover:bg-indigo-700">Guardar na Nuvem</button>
+                                    <div className="col-span-full pt-8 flex gap-4">
+                                        <button type="button" onClick={closeTaskModal} className="flex-1 py-4 text-slate-400 font-black text-xs uppercase tracking-widest hover:bg-slate-50 rounded-2xl transition-all">Cancelar</button>
+                                        <button type="submit" className="flex-[2] py-4 btn-vibrant text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg">Confirmar e Guardar</button>
                                     </div>
                                 </form>
                             </div>
@@ -717,14 +682,15 @@
                     
                     {isSubtaskModalOpen && (
                         <div className="fixed inset-0 z-50 modal-backdrop flex items-center justify-center p-4">
-                            <div className="bg-white rounded-3xl w-full max-w-md p-8 animate-slide shadow-2xl">
-                                <h3 className="text-xl font-black mb-6 tracking-tight text-slate-800">Nova Tarefa</h3>
-                                <form onSubmit={saveSubtask} className="space-y-4">
-                                    <input required type="text" placeholder="O que precisa de ser feito?" value={subtaskData.title} onChange={e => setSubtaskData({...subtaskData, title: e.target.value})} className="w-full p-3 bg-slate-50 border rounded-xl outline-none focus:ring-2 focus:ring-indigo-500"/>
-                                    <textarea placeholder="Primeira nota de histórico (obrigatória)" required value={subtaskData.note} onChange={e => setSubtaskData({...subtaskData, note: e.target.value})} className="w-full p-3 bg-slate-50 border rounded-xl text-sm" rows="3"/>
-                                    <div className="flex gap-2 pt-4">
-                                        <button type="button" onClick={() => setIsSubtaskModalOpen(false)} className="flex-1 py-3 text-slate-400 font-bold hover:bg-slate-100 rounded-xl">Voltar</button>
-                                        <button type="submit" className="flex-1 py-3 bg-slate-900 text-white rounded-xl font-bold hover:bg-black transition-all">Confirmar</button>
+                            <div className="bg-white rounded-[2.5rem] w-full max-w-md p-10 animate-slide shadow-2xl">
+                                <div className="w-16 h-16 bg-slate-900 text-white rounded-2xl flex items-center justify-center text-2xl mx-auto mb-6"><i className="fas fa-tasks"></i></div>
+                                <h3 className="text-2xl font-black mb-8 tracking-tighter text-center">Nova Etapa Crítica</h3>
+                                <form onSubmit={saveSubtask} className="space-y-5">
+                                    <input required type="text" placeholder="O que precisa de ser feito?" value={subtaskData.title} onChange={e => setSubtaskData({...subtaskData, title: e.target.value})} className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:border-indigo-500 transition-all font-bold"/>
+                                    <textarea placeholder="Primeiro registo de histórico..." required value={subtaskData.note} onChange={e => setSubtaskData({...subtaskData, note: e.target.value})} className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-xs min-h-[100px] outline-none" />
+                                    <div className="flex gap-3 pt-6">
+                                        <button type="button" onClick={() => setIsSubtaskModalOpen(false)} className="flex-1 py-4 text-slate-400 font-bold text-xs uppercase">Voltar</button>
+                                        <button type="submit" className="flex-[2] py-4 bg-slate-950 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-black shadow-xl">Criar Etapa</button>
                                     </div>
                                 </form>
                             </div>
@@ -734,35 +700,36 @@
             );
         }
 
-        function StatCard({ label, value, borderColor, textColor = "text-slate-800" }) {
+        function StatCard({ label, value, icon, color }) {
+            const colors = {
+                indigo: "text-indigo-600 bg-indigo-50 border-indigo-100",
+                amber: "text-amber-600 bg-amber-50 border-amber-100",
+                red: "text-red-600 bg-red-50 border-red-100",
+                emerald: "text-emerald-600 bg-emerald-50 border-emerald-100"
+            };
             return (
-                <div className={`glass-card px-3 py-2 md:px-4 md:py-2.5 rounded-xl shadow-sm border-l-4 flex-shrink-0 min-w-[110px] md:min-w-[130px] lg:min-w-0 lg:flex-1 ${borderColor}`}>
-                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">{label}</p>
-                    <h3 className={`text-base md:text-lg font-black ${textColor}`}>{value}</h3>
+                <div className="glass-card px-6 py-5 rounded-[2rem] shadow-sm flex-shrink-0 min-w-[150px] lg:flex-1 group">
+                    <div className="flex justify-between items-start mb-3">
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm ${colors[color]} group-hover:scale-110 transition-transform`}><i className={`fas ${icon}`}></i></div>
+                        <span className="text-2xl font-black text-slate-900">{value}</span>
+                    </div>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{label}</p>
                 </div>
             );
         }
 
-        function ProjectCard({ p, isCompact, globalCollapse, searchTerm, onEdit, onDelete, onStatus, onToggleSub, onEditSubtask, onDeleteSubtask, onAddSub, onAddHistoryNote, onEditHistoryNote, onDeleteHistoryNote, onToggleHistoryNote }) {
+        function ProjectCard({ p, isCompact, globalCollapse, searchTerm, onEdit, onDelete, onStatus, onToggleSub, onAddSub, onAddHistoryNote, onToggleHistoryNote, onDeleteHistoryNote }) {
             const [isCollapsed, setIsCollapsed] = useState(isCompact);
             const [addingToSubId, setAddingToSubId] = useState(null);
             const [newNoteText, setNewNoteText] = useState("");
-            const [editingNote, setEditingNote] = useState({ subId: null, idx: null });
-            const [editNoteText, setEditNoteText] = useState("");
-            const [editingSubId, setEditingSubId] = useState(null);
-            const [editSubTitle, setEditSubTitle] = useState("");
 
             useEffect(() => { setIsCollapsed(isCompact); }, [isCompact]);
             useEffect(() => { if (globalCollapse && globalCollapse.count > 0 && p.status !== 'Concluído') setIsCollapsed(globalCollapse.collapsed); }, [globalCollapse.count]);
 
             useEffect(() => {
                 if (searchTerm.trim()) {
-                    const term = searchTerm.toLowerCase();
-                    const hasInternalMatch = p.subtasks?.some(sub => 
-                        sub.title.toLowerCase().includes(term) || 
-                        sub.notes?.some(n => n.text.toLowerCase().includes(term))
-                    );
-                    if (hasInternalMatch) setIsCollapsed(false);
+                    const hasMatch = p.subtasks?.some(sub => sub.title.toLowerCase().includes(searchTerm.toLowerCase()) || sub.notes?.some(n => n.text.toLowerCase().includes(searchTerm.toLowerCase())));
+                    if (hasMatch) setIsCollapsed(false);
                 }
             }, [searchTerm]);
 
@@ -771,147 +738,99 @@
             const sumProgress = p.subtasks?.reduce((acc, sub) => acc + (sub.progress ?? (sub.completed ? 100 : 0)), 0) || 0;
             const progress = total > 0 ? Math.round(sumProgress / total) : (p.status === 'Concluído' ? 100 : 0);
             
-            const handleAddNote = (sub) => { if (!newNoteText.trim()) return; onAddHistoryNote(sub.id, newNoteText); setNewNoteText(""); setAddingToSubId(null); };
-            const handleSaveEditNote = (subId, idx) => { if (editNoteText.trim() !== "") onEditHistoryNote(subId, idx, editNoteText); setEditingNote({ subId: null, idx: null }); };
-            const getStatusLabel = (s) => s === 'Andamento' ? 'Em Execução' : s === 'Concluído' ? 'Finalizado' : s;
+            const handleAddNote = (subId) => { if (!newNoteText.trim()) return; onAddHistoryNote(subId, newNoteText); setNewNoteText(""); setAddingToSubId(null); };
 
             return (
-                <div className={`glass-card rounded-3xl p-6 shadow-sm transition-all ${isCollapsed ? 'opacity-70 border-dashed bg-slate-50/50' : 'bg-white hover:border-indigo-200'}`}>
-                    <div className="flex flex-col lg:flex-row justify-between gap-6">
+                <div className={`glass-card rounded-[2.5rem] p-7 transition-all ${isCollapsed ? 'bg-slate-50/40 border-dashed opacity-80' : 'bg-white border-slate-100 ring-1 ring-indigo-50/50'}`}>
+                    <div className="flex flex-col lg:flex-row justify-between gap-8">
                         <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-3 mb-2">
-                                <span className={`status-pill status-${p.status}`}>{getStatusLabel(p.status)}</span>
-                                <span className="text-[10px] font-black uppercase text-slate-400 bg-slate-100 px-2 py-1 rounded tracking-tighter">Prio: {p.priority}</span>
+                            <div className="flex items-center gap-3 mb-3">
+                                <span className={`status-pill status-${p.status}`}>{p.status === 'Andamento' ? 'Execução' : p.status === 'Concluído' ? 'Finalizado' : p.status}</span>
+                                <span className={`text-[10px] font-black uppercase px-2 py-1 rounded-md tracking-tighter ${p.priority === 'Alta' ? 'text-red-500 bg-red-50' : 'text-slate-400 bg-slate-100'}`}>Prio: {p.priority}</span>
                             </div>
-                            <h3 className="text-xl font-black text-slate-800 truncate">
+                            <h3 className="text-2xl font-black text-slate-900 truncate leading-tight">
                                 <HighlightedText text={p.title} term={searchTerm} />
                             </h3>
-                            <p className="text-xs text-slate-500 mt-1 flex items-center gap-2 font-medium"><i className="far fa-calendar-alt text-indigo-400"></i> {formatDate(p.start)} — {formatDate(p.end)}</p>
+                            <p className="text-xs text-slate-400 mt-2 flex items-center gap-2 font-bold uppercase tracking-wider"><i className="far fa-calendar-alt text-indigo-400"></i> {formatDate(p.start)} <span className="opacity-30">—</span> {formatDate(p.end)}</p>
                             
                             {isCollapsed && (
-                                <div className="mt-3 flex flex-col gap-1.5 max-w-[200px] animate-slide">
-                                    <div className="flex justify-between items-center text-[9px] font-bold text-slate-400 uppercase">
-                                        <span>Progresso</span>
-                                        <span className="text-indigo-600">{completedCount}/{total} etapas • {progress}%</span>
-                                    </div>
-                                    <div className="h-1 bg-slate-200 rounded-full overflow-hidden">
-                                        <div className="h-full bg-indigo-500 transition-all duration-700" style={{width: `${progress}%`}}></div>
-                                    </div>
+                                <div className="mt-5 flex items-center gap-4 animate-slide">
+                                    <div className="flex-1 progress-bar-container"><div className="progress-bar-fill" style={{width: `${progress}%`}}></div></div>
+                                    <span className="text-[10px] font-black text-indigo-600">{progress}%</span>
                                 </div>
                             )}
                         </div>
-                        <div className="flex flex-col justify-center bg-slate-50 p-4 rounded-2xl min-w-[280px] border border-slate-100 group relative">
-                            <button onClick={onEdit} className="absolute top-2 right-2 text-indigo-400 opacity-0 group-hover:opacity-100 p-2 hover:bg-white rounded-lg"><i className="fas fa-pencil text-[10px]"></i></button>
-                            <div className="space-y-1.5 text-xs text-slate-600">
-                                <div className="flex items-center gap-2"><i className="fas fa-user-tie text-indigo-500 w-4 text-center"></i><span className="font-bold text-slate-400 uppercase text-[8px] w-12">Dono:</span><span className="truncate font-semibold"><HighlightedText text={p.owner} term={searchTerm} /></span></div>
-                                <div className="flex items-center gap-2"><i className="fas fa-users text-indigo-500 w-4 text-center"></i><span className="font-bold text-slate-400 uppercase text-[8px] w-12">Equipa:</span><span className="truncate font-semibold"><HighlightedText text={p.team} term={searchTerm} /></span></div>
-                                <div className="flex items-center gap-2"><i className="fas fa-building text-indigo-500 w-4 text-center"></i><span className="font-bold text-slate-400 uppercase text-[8px] w-12">Empresa:</span><span className="truncate font-semibold"><HighlightedText text={p.company} term={searchTerm} /></span></div>
+                        
+                        <div className="flex flex-col justify-center bg-slate-50/80 p-5 rounded-3xl min-w-[280px] border border-slate-100 group relative shadow-inner">
+                            <button onClick={onEdit} className="absolute top-3 right-3 text-slate-300 opacity-0 group-hover:opacity-100 p-2 hover:bg-white hover:text-indigo-600 rounded-xl transition-all"><i className="fas fa-edit text-xs"></i></button>
+                            <div className="space-y-2.5">
+                                <div className="flex items-center gap-3"><i className="fas fa-id-badge text-indigo-500 w-4"></i><span className="font-black text-slate-400 uppercase text-[8px] w-12">Dono:</span><span className="text-xs font-bold text-slate-700 truncate"><HighlightedText text={p.owner} term={searchTerm} /></span></div>
+                                <div className="flex items-center gap-3"><i className="fas fa-users-cog text-indigo-500 w-4"></i><span className="font-black text-slate-400 uppercase text-[8px] w-12">Equipa:</span><span className="text-xs font-bold text-slate-700 truncate"><HighlightedText text={p.team} term={searchTerm} /></span></div>
+                                <div className="flex items-center gap-3"><i className="fas fa-building text-indigo-500 w-4"></i><span className="font-black text-slate-400 uppercase text-[8px] w-12">Cliente:</span><span className="text-xs font-bold text-slate-700 truncate"><HighlightedText text={p.company} term={searchTerm} /></span></div>
                             </div>
                         </div>
-                        <div className="flex items-start gap-2">
-                            <button onClick={() => setIsCollapsed(!isCollapsed)} className={`p-3 rounded-xl transition-all shadow-sm ${isCollapsed ? 'bg-amber-50 text-amber-600' : 'bg-slate-100 text-slate-500'}`}><i className={`fas ${isCollapsed ? 'fa-plus' : 'fa-minus'}`}></i></button>
-                            {!isCollapsed && <button onClick={onAddSub} className="p-3 bg-indigo-50 text-indigo-600 rounded-xl"><i className="fas fa-plus"></i></button>}
-                            <button onClick={() => onDelete(p.id)} className="p-3 bg-red-50 text-red-500 rounded-xl"><i className="fas fa-trash-alt"></i></button>
+
+                        <div className="flex lg:flex-col gap-2 items-center justify-center">
+                            <button onClick={() => setIsCollapsed(!isCollapsed)} className={`w-12 h-12 rounded-2xl transition-all flex items-center justify-center shadow-sm ${isCollapsed ? 'bg-amber-500 text-white shadow-amber-200' : 'bg-slate-100 text-slate-400'}`}><i className={`fas ${isCollapsed ? 'fa-plus' : 'fa-minus'}`}></i></button>
+                            {!isCollapsed && <button onClick={onAddSub} className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center shadow-indigo-100"><i className="fas fa-tasks"></i></button>}
+                            <button onClick={onDelete} className="w-12 h-12 bg-red-50 text-red-500 rounded-2xl flex items-center justify-center hover:bg-red-500 hover:text-white transition-all"><i className="fas fa-trash-alt text-xs"></i></button>
                         </div>
                     </div>
+
                     {!isCollapsed && (
-                        <div className="grid grid-cols-1 md:grid-cols-12 gap-8 border-t border-slate-50 mt-6 pt-6 animate-in">
-                            <div className="md:col-span-4">
-                                <div className="flex justify-between items-end mb-2"><span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Evolução Geral</span><span className="text-sm font-black text-indigo-600">{progress}%</span></div>
-                                <div className="progress-bar-container"><div className="progress-bar-fill bg-indigo-600" style={{width: `${progress}%`}}></div></div>
-                                <div className="mt-4">
-                                     <select value={p.status} onChange={(e) => onStatus(e.target.value)} className="w-full p-2 bg-slate-50 border-none rounded-lg text-[10px] font-bold uppercase cursor-pointer">
-                                        <option value="Andamento">Em Execução</option><option value="Pendente">Pendente</option><option value="Planeamento">Planeamento</option><option value="Concluído">Finalizado</option>
+                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 border-t border-slate-100 mt-8 pt-8 animate-in">
+                            <div className="lg:col-span-4">
+                                <div className="flex justify-between items-end mb-3"><span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Performance Geral</span><span className="text-lg font-black text-indigo-600">{progress}%</span></div>
+                                <div className="progress-bar-container"><div className="progress-bar-fill" style={{width: `${progress}%`}}></div></div>
+                                <div className="mt-6 bg-slate-50 p-2 rounded-2xl">
+                                     <select value={p.status} onChange={(e) => onStatus(e.target.value)} className="w-full p-3 bg-transparent border-none rounded-xl text-[10px] font-black uppercase text-slate-600 cursor-pointer outline-none">
+                                        <option value="Andamento">Execução</option><option value="Pendente">Pendente</option><option value="Planeamento">Planeamento</option><option value="Concluído">Finalizado</option>
                                     </select>
                                 </div>
                             </div>
-                            <div className="md:col-span-8 space-y-4">
+                            
+                            <div className="lg:col-span-8 space-y-6">
                                 {p.subtasks?.map(sub => (
-                                    <div key={sub.id} className="bg-slate-50/50 p-4 rounded-2xl border border-transparent group/task relative">
-                                        {editingSubId === sub.id ? (
-                                            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mb-3 animate-slide bg-white p-3 rounded-xl border border-indigo-100">
-                                                <input type="checkbox" disabled checked={sub.completed} className="w-5 h-5 rounded-lg border-slate-300 text-slate-300 cursor-not-allowed"/>
-                                                <div className="flex-1 w-full flex flex-col sm:flex-row gap-2">
-                                                    <input type="text" className="w-full p-2 bg-slate-50 border border-indigo-200 rounded-lg text-sm font-bold" value={editSubTitle} onChange={e => setEditSubTitle(e.target.value)} autoFocus />
-                                                    <div className="flex justify-end gap-2">
-                                                        <button onClick={() => setEditingSubId(null)} className="text-slate-400 text-[10px] px-3 py-2 font-bold">Cancelar</button>
-                                                        <button onClick={() => { onEditSubtask(sub.id, editSubTitle); setEditingSubId(null); }} className="bg-indigo-600 text-white text-[10px] px-3 py-2 rounded-lg font-bold shadow-sm">Salvar</button>
+                                    <div key={sub.id} className="bg-slate-50/50 p-6 rounded-3xl border border-transparent hover:border-slate-200 transition-all group/task">
+                                        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-4">
+                                            <div className="flex items-center gap-4 flex-1">
+                                                <input type="checkbox" checked={sub.completed} onChange={() => onToggleSub(p.id, sub.id)} className="w-6 h-6 rounded-lg border-slate-300 text-indigo-600 cursor-pointer transition-all focus:ring-offset-2 focus:ring-indigo-500"/>
+                                                <div className="flex-1 min-w-0">
+                                                    <p className={`font-black text-sm truncate ${sub.completed ? 'line-through text-slate-300' : 'text-slate-800'}`}>
+                                                        <HighlightedText text={sub.title} term={searchTerm} />
+                                                    </p>
+                                                    <div className="flex items-center gap-2 mt-1">
+                                                        <div className="h-1.5 flex-1 bg-slate-200 rounded-full overflow-hidden"><div className="h-full bg-indigo-500" style={{width: `${sub.progress ?? (sub.completed ? 100 : 0)}%`}}></div></div>
+                                                        <span className="text-[9px] font-black text-indigo-500">{sub.progress ?? (sub.completed ? 100 : 0)}%</span>
                                                     </div>
                                                 </div>
                                             </div>
-                                        ) : (
-                                            <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-3 gap-3">
-                                                <div className="flex items-center gap-3 w-full sm:w-auto flex-1 pr-0 sm:pr-4">
-                                                    <input type="checkbox" checked={sub.completed} onChange={() => onToggleSub(sub.id)} className="w-5 h-5 rounded-lg border-slate-300 text-indigo-600 cursor-pointer flex-shrink-0"/>
-                                                    <div className="flex-1 min-w-0">
-                                                        <div className="flex justify-between items-center mb-1">
-                                                            <p className={`font-bold text-sm truncate pr-2 ${sub.completed ? 'line-through text-slate-400' : 'text-slate-700'}`}>
-                                                                <HighlightedText text={sub.title} term={searchTerm} />
-                                                            </p>
-                                                            <span className="text-[10px] font-black text-indigo-500">{sub.progress ?? (sub.completed ? 100 : 0)}%</span>
-                                                        </div>
-                                                        <div className="h-1.5 w-full bg-slate-200 rounded-full overflow-hidden"><div className="h-full bg-indigo-500 transition-all" style={{width: `${sub.progress ?? (sub.completed ? 100 : 0)}%`}}></div></div>
-                                                    </div>
-                                                </div>
-                                                <div className="flex items-center justify-end gap-2 flex-shrink-0">
-                                                    <div className="opacity-0 group-hover/task:opacity-100 transition-all flex gap-1 mr-1">
-                                                        <button onClick={() => { setEditingSubId(sub.id); setEditSubTitle(sub.title); }} className="text-indigo-300 hover:text-indigo-600 px-1.5 py-1" title="Editar Tarefa"><i className="fas fa-pencil-alt text-[11px]"></i></button>
-                                                        <button onClick={() => onDeleteSubtask(sub.id)} className="text-red-200 hover:text-red-500 px-1.5 py-1" title="Excluir Tarefa e Histórico"><i className="fas fa-trash-alt text-[11px]"></i></button>
-                                                    </div>
-                                                    <button onClick={() => setAddingToSubId(addingToSubId === sub.id ? null : sub.id)} className={`text-[10px] font-bold px-3 py-1.5 rounded-lg transition-all flex items-center gap-2 ${addingToSubId === sub.id ? 'bg-indigo-600 text-white' : 'bg-white text-indigo-600 border border-indigo-100 hover:bg-indigo-50'}`}><i className="fas fa-plus"></i> {addingToSubId === sub.id ? 'Cancelar' : 'Nova Etapa'}</button>
-                                                </div>
-                                            </div>
-                                        )}
+                                            <button onClick={() => setAddingToSubId(addingToSubId === sub.id ? null : sub.id)} className={`text-[10px] font-black px-4 py-2 rounded-xl transition-all uppercase tracking-widest ${addingToSubId === sub.id ? 'bg-indigo-600 text-white' : 'bg-white text-indigo-600 border border-indigo-100 hover:bg-indigo-50'}`}>Atualizar</button>
+                                        </div>
+
                                         {addingToSubId === sub.id && (
-                                            <div className="mb-4 animate-slide bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
-                                                <textarea className="note-input mb-2" placeholder="Descreva a nova atualização..." value={newNoteText} onChange={(e) => setNewNoteText(e.target.value)} rows="2" autoFocus />
-                                                <div className="flex justify-end"><button onClick={() => handleAddNote(sub)} className="bg-indigo-600 text-white text-[10px] px-4 py-2 rounded-xl font-bold shadow-md hover:bg-indigo-700">Guardar Registo</button></div>
+                                            <div className="mb-6 animate-slide bg-white p-4 rounded-2xl border border-indigo-100 shadow-sm">
+                                                <textarea className="note-input mb-3" placeholder="O que foi alterado nesta etapa?" value={newNoteText} onChange={(e) => setNewNoteText(e.target.value)} rows="2" autoFocus />
+                                                <div className="flex justify-end"><button onClick={() => handleAddNote(sub.id)} className="bg-indigo-600 text-white text-[10px] px-6 py-2.5 rounded-xl font-black uppercase tracking-widest shadow-lg shadow-indigo-100">Registar</button></div>
                                             </div>
                                         )}
-                                        {sub.notes && sub.notes.length > 0 && (
-                                            <div className="space-y-1.5 mt-2">
-                                                {sub.notes.map((n, idx) => {
-                                                    const isEditing = editingNote.subId === sub.id && editingNote.idx === idx;
-                                                    return (
-                                                        <div key={idx} className="bg-white px-3 py-2 rounded-xl border border-slate-100 shadow-sm group/history relative">
-                                                            {isEditing ? (
-                                                                <div className="animate-slide">
-                                                                    <textarea className="note-input mb-1.5 w-full text-[11px] p-2" value={editNoteText} onChange={(e) => setEditNoteText(e.target.value)} rows="2" autoFocus />
-                                                                    <div className="flex justify-end gap-2 mt-1">
-                                                                        <button onClick={() => setEditingNote({ subId: null, idx: null })} className="text-slate-400 text-[10px] px-2 py-1 font-bold">Cancelar</button>
-                                                                        <button onClick={() => handleSaveEditNote(sub.id, idx)} className="bg-indigo-600 text-white text-[10px] px-2 py-1 rounded-lg font-bold shadow-sm">Salvar</button>
-                                                                    </div>
-                                                                </div>
-                                                            ) : (
-                                                                <>
-                                                                    <div className="flex items-start gap-2">
-                                                                        <input type="checkbox" checked={n.completed || false} onChange={() => onToggleHistoryNote(sub.id, idx)} className="mt-0.5 w-3.5 h-3.5 rounded border-slate-300 text-indigo-600 cursor-pointer"/>
-                                                                        <p className={`text-[11px] italic whitespace-pre-wrap ${n.completed ? 'line-through text-slate-400' : 'text-slate-600'}`}>
-                                                                            "<HighlightedText text={n.text} term={searchTerm} />"
-                                                                        </p>
-                                                                    </div>
-                                                                    <div className="flex justify-between items-center mt-1.5 border-t border-slate-50 pt-1.5 pl-5">
-                                                                        <span className="text-[8px] font-bold text-slate-300 uppercase tracking-widest flex items-center gap-1.5 flex-wrap">
-                                                                            <span className="flex items-center gap-1"><i className="far fa-clock"></i> {n.time}</span>
-                                                                            {n.lastEdit && (
-                                                                                <span className="flex items-center gap-1 text-indigo-300/80">
-                                                                                    <span className="opacity-40">•</span>
-                                                                                    <i className="fas fa-history text-[7px]"></i> {n.lastEdit}
-                                                                                </span>
-                                                                            )}
-                                                                        </span>
-                                                                        <div className="opacity-0 group-hover/history:opacity-100 transition-all flex gap-0.5">
-                                                                            <button onClick={() => { setEditingNote({ subId: sub.id, idx }); setEditNoteText(n.text); }} className="text-indigo-300 hover:text-indigo-600 px-1.5 py-0.5" title="Editar"><i className="fas fa-pencil-alt text-[9px]"></i></button>
-                                                                            <button onClick={() => onDeleteHistoryNote(sub.id, idx)} className="text-red-200 hover:text-red-500 px-1.5 py-0.5" title="Remover"><i className="fas fa-trash-alt text-[9px]"></i></button>
-                                                                        </div>
-                                                                    </div>
-                                                                </>
-                                                            )}
-                                                        </div>
-                                                    );
-                                                })}
-                                            </div>
-                                        )}
+
+                                        <div className="space-y-2 pl-10 border-l-2 border-slate-100 ml-3">
+                                            {sub.notes?.map((n, idx) => (
+                                                <div key={idx} className="bg-white/80 px-4 py-3 rounded-2xl border border-slate-100 shadow-sm group/note relative hover:border-indigo-100 transition-all">
+                                                    <div className="flex items-start gap-3">
+                                                        <input type="checkbox" checked={n.completed} onChange={() => onToggleHistoryNote(p.id, sub.id, idx)} className="mt-1 w-4 h-4 rounded border-slate-200 text-indigo-500 cursor-pointer"/>
+                                                        <p className={`text-[11px] leading-relaxed font-medium ${n.completed ? 'line-through text-slate-300' : 'text-slate-600'}`}>
+                                                            <HighlightedText text={n.text} term={searchTerm} />
+                                                        </p>
+                                                    </div>
+                                                    <div className="flex justify-between items-center mt-2 pt-2 border-t border-slate-50">
+                                                        <span className="text-[8px] font-black text-slate-300 uppercase tracking-widest flex items-center gap-2"><i className="far fa-clock"></i> {n.time}</span>
+                                                        <button onClick={() => onDeleteHistoryNote(p.id, sub.id, idx)} className="opacity-0 group-note:opacity-100 text-red-300 hover:text-red-500 transition-all"><i className="fas fa-times-circle text-xs"></i></button>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
                                     </div>
                                 ))}
                             </div>
