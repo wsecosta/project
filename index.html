@@ -180,11 +180,21 @@
 
         .modal-backdrop {
             background: rgba(15, 23, 42, 0.4);
-            backdrop-filter: blur(6px);
+            backdrop-filter: blur(10px);
+        }
+
+        .modal-compact-container {
+            padding: 1.5rem !important; /* Reduzido de 2.5rem */
+            gap: 1rem !important; /* Reduzido de 2rem */
+        }
+        
+        .modal-compact-container input, 
+        .modal-compact-container select {
+            padding: 0.75rem !important; /* Mais baixo */
         }
 
         @keyframes slideUp {
-            from { transform: translateY(20px) scale(0.98); opacity: 0; }
+            from { transform: translateY(30px) scale(0.95); opacity: 0; }
             to { transform: translateY(0) scale(1); opacity: 1; }
         }
         .animate-slide { animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
@@ -296,6 +306,213 @@
             const [editingId, setEditingId] = useState(null);
             const [taskData, setTaskData] = useState({ title: '', start: '', end: '', priority: 'Média', owner: '', team: '', company: '' });
             const [subtaskData, setSubtaskData] = useState({ parentId: '', subId: null, title: '', note: '' });
+
+            const handleLogin = async (e) => {
+                e.preventDefault();
+                setLoginError(null);
+                setIsLoggingIn(true);
+                try {
+                    await setPersistence(auth, browserSessionPersistence);
+                    await signInWithEmailAndPassword(auth, email, password);
+                } catch (err) {
+                    setLoginError("Acesso negado. Verifique os seus dados.");
+                } finally {
+                    setIsLoggingIn(false);
+                }
+            };
+
+            const handleLogout = async () => {
+                if (window.confirm("Deseja encerrar a sessão com segurança?")) {
+                    try {
+                        await signOut(auth);
+                        setUser(null);
+                    } catch (err) {}
+                }
+            };
+
+            const exportBackup = () => {
+                const dataStr = JSON.stringify(projects, null, 2);
+                const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+                const linkElement = document.createElement('a');
+                linkElement.setAttribute('href', dataUri);
+                linkElement.setAttribute('download', `backup_ansr_${new Date().toISOString().split('T')[0]}.json`);
+                linkElement.click();
+            };
+
+            const importBackup = async (e) => {
+                const file = e.target.files[0];
+                if (!file || !user) return;
+                const reader = new FileReader();
+                reader.onload = async (event) => {
+                    try {
+                        const importedData = JSON.parse(event.target.result);
+                        if (!window.confirm(`Vai importar ${importedData.length} projetos. Confirma?`)) return;
+                        for (const proj of importedData) {
+                            const { id, ...projectData } = proj;
+                            await setDoc(doc(db, DB_COLLECTION, id || Date.now().toString()), projectData);
+                        }
+                    } catch (error) { console.error(error); }
+                    e.target.value = null;
+                };
+                reader.readAsText(file);
+            };
+
+            const triggerImport = () => fileInputRef.current && fileInputRef.current.click();
+
+            const closeTaskModal = () => {
+                setIsTaskModalOpen(false);
+                setEditingId(null);
+                setTaskData({ title: '', start: '', end: '', priority: 'Média', owner: '', team: '', company: '' });
+            };
+
+            const openEditTask = (p) => {
+                setEditingId(p.id);
+                setTaskData({
+                    title: p.title || '', start: p.start || '', end: p.end || '',
+                    priority: p.priority || 'Média', owner: p.owner || '', team: p.team || '', company: p.company || ''
+                });
+                setIsTaskModalOpen(true);
+            };
+
+            const saveProject = async (e) => {
+                e.preventDefault();
+                if (!user) return;
+                try {
+                    if (editingId) await updateDoc(doc(db, DB_COLLECTION, editingId), taskData);
+                    else await addDoc(collection(db, DB_COLLECTION), { ...taskData, status: 'Pendente', subtasks: [], createdAt: serverTimestamp(), createdBy: user.uid });
+                    closeTaskModal();
+                } catch (err) { console.error(err); }
+            };
+
+            const deleteProject = async (id) => {
+                if (!user || !window.confirm("Eliminar este projeto permanentemente?")) return;
+                try { await deleteDoc(doc(db, DB_COLLECTION, id)); } catch(err) { }
+            };
+
+            const updateStatus = async (id, newStatus) => {
+                if (!user) return;
+                try { await updateDoc(doc(db, DB_COLLECTION, id), { status: newStatus }); } catch(err) { }
+            };
+
+            const saveSubtask = async (e) => {
+                e.preventDefault();
+                if (!user) return;
+                const p = projects.find(proj => proj.id === subtaskData.parentId);
+                if (!p) return;
+                let newSubs = [...(p.subtasks || [])];
+                const time = new Date().toLocaleString('pt-PT', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
+                newSubs.push({ id: Date.now().toString(), title: subtaskData.title, completed: false, progress: 0, notes: subtaskData.note.trim() ? [{ text: subtaskData.note, time, completed: false }] : [] });
+                try {
+                    await updateDoc(doc(db, DB_COLLECTION, p.id), { subtasks: newSubs, status: p.status === 'Pendente' || p.status === 'Planeamento' ? 'Andamento' : p.status });
+                    setIsSubtaskModalOpen(false);
+                    setSubtaskData({ parentId: '', subId: null, title: '', note: '' });
+                } catch(err) { }
+            };
+
+            const editSubtask = async (projectId, subtaskId, newTitle) => {
+                if (!newTitle.trim()) return;
+                const project = projects.find(p => p.id === projectId);
+                if (!project) return;
+                const newSubtasks = project.subtasks.map(sub => sub.id === subtaskId ? { ...sub, title: newTitle } : sub);
+                try { await updateDoc(doc(db, DB_COLLECTION, projectId), { subtasks: newSubtasks }); } catch(err) { }
+            };
+
+            const deleteSubtask = async (projectId, subtaskId) => {
+                if (!window.confirm("Remover permanentemente?")) return;
+                const project = projects.find(p => p.id === projectId);
+                if (!project) return;
+                const newSubtasks = project.subtasks.filter(sub => sub.id !== subtaskId);
+                const allDone = newSubtasks.length > 0 && newSubtasks.every(s => s.completed);
+                try {
+                    await updateDoc(doc(db, DB_COLLECTION, projectId), { 
+                        subtasks: newSubtasks,
+                        status: allDone ? 'Concluído' : (project.status === 'Concluído' && newSubtasks.length > 0 ? 'Andamento' : project.status)
+                    });
+                } catch(err) { }
+            };
+
+            const toggleSub = async (tId, sId) => {
+                const p = projects.find(proj => proj.id === tId);
+                const newSubs = p.subtasks.map(s => {
+                    if (s.id === sId) {
+                        const isCompleted = !s.completed;
+                        const newNotes = (s.notes || []).map(n => ({ ...n, completed: isCompleted }));
+                        return { ...s, completed: isCompleted, notes: newNotes, progress: isCompleted ? 100 : 0 };
+                    }
+                    return s;
+                });
+                const allDone = newSubs.length > 0 && newSubs.every(s => s.completed);
+                try { await updateDoc(doc(db, DB_COLLECTION, tId), { subtasks: newSubs, status: allDone ? 'Concluído' : (p.status === 'Concluído' ? 'Andamento' : p.status) });
+                } catch(err) { }
+            };
+
+            const toggleHistoryNote = async (projectId, subtaskId, noteIndex) => {
+                const project = projects.find(p => p.id === projectId);
+                if (!project) return;
+                const newSubtasks = project.subtasks.map(sub => {
+                    if (sub.id === subtaskId) {
+                        const newNotes = [...(sub.notes || [])];
+                        newNotes[noteIndex] = { ...newNotes[noteIndex], completed: !newNotes[noteIndex].completed };
+                        const completedCount = newNotes.filter(n => n.completed).length;
+                        const newProgress = newNotes.length > 0 ? Math.round((completedCount / newNotes.length) * 100) : 0;
+                        return { ...sub, notes: newNotes, progress: newProgress, completed: newProgress === 100 };
+                    }
+                    return sub;
+                });
+                const allDone = newSubtasks.length > 0 && newSubtasks.every(s => s.completed);
+                try { await updateDoc(doc(db, DB_COLLECTION, projectId), { subtasks: newSubtasks, status: allDone ? 'Concluído' : (project.status === 'Concluído' ? 'Andamento' : project.status) });
+                } catch(err) { }
+            };
+
+            const addHistoryNote = async (projectId, subtaskId, text) => {
+                if (!text.trim()) return;
+                const project = projects.find(p => p.id === projectId);
+                if (!project) return;
+                const time = new Date().toLocaleString('pt-PT', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
+                const newSubtasks = project.subtasks.map(sub => {
+                    if (sub.id === subtaskId) {
+                        const newNotes = [...(sub.notes || []), { text, time, completed: false }];
+                        const completedCount = newNotes.filter(n => n.completed).length;
+                        const newProgress = newNotes.length > 0 ? Math.round((completedCount / newNotes.length) * 100) : 0;
+                        return { ...sub, notes: newNotes, progress: newProgress, completed: newProgress === 100 };
+                    }
+                    return sub;
+                });
+                try { await updateDoc(doc(db, DB_COLLECTION, projectId), { subtasks: newSubtasks }); } catch(err) { }
+            };
+
+            const editHistoryNote = async (projectId, subtaskId, noteIndex, newText) => {
+                if (!newText.trim()) return;
+                const project = projects.find(p => p.id === projectId);
+                if (!project) return;
+                const editTime = new Date().toLocaleString('pt-PT', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
+                const newSubtasks = project.subtasks.map(sub => {
+                    if (sub.id === subtaskId) {
+                        const newNotes = [...(sub.notes || [])];
+                        newNotes[noteIndex] = { ...newNotes[noteIndex], text: newText, lastEdit: editTime };
+                        return { ...sub, notes: newNotes };
+                    }
+                    return sub;
+                });
+                try { await updateDoc(doc(db, DB_COLLECTION, projectId), { subtasks: newSubtasks }); } catch(err) { }
+            };
+
+            const deleteHistoryNote = async (projectId, subtaskId, noteIndex) => {
+                if (!window.confirm("Remover nota?")) return;
+                const project = projects.find(p => p.id === projectId);
+                if (!project) return;
+                const newSubtasks = project.subtasks.map(sub => {
+                    if (sub.id === subtaskId) {
+                        const newNotes = [...(sub.notes || [])];
+                        newNotes.splice(noteIndex, 1);
+                        const completedCount = newNotes.filter(n => n.completed).length;
+                        const newProgress = newNotes.length > 0 ? Math.round((completedCount / newNotes.length) * 100) : (sub.completed ? 100 : 0);
+                        return { ...sub, notes: newNotes, progress: newProgress, completed: newProgress === 100 };
+                    }
+                    return sub;
+                });
+                try { await updateDoc(doc(db, DB_COLLECTION, projectId), { subtasks: newSubtasks }); } catch(err) { }
+            };
 
             const sortedProjects = useMemo(() => {
                 const statusWeight = { 'Andamento': 1, 'Pendente': 2, 'Planeamento': 3, 'Concluído': 4 };
@@ -410,147 +627,6 @@
                 });
             }, [projects, loading, user]);
 
-            const handleLogin = async (e) => {
-                e.preventDefault();
-                setLoginError(null);
-                setIsLoggingIn(true);
-                try {
-                    await setPersistence(auth, browserSessionPersistence);
-                    await signInWithEmailAndPassword(auth, email, password);
-                } catch (err) {
-                    setLoginError("Acesso negado. Verifique os seus dados.");
-                } finally {
-                    setIsLoggingIn(false);
-                }
-            };
-
-            const handleLogout = async () => {
-                if (window.confirm("Deseja encerrar a sessão com segurança?")) {
-                    try {
-                        await signOut(auth);
-                        setUser(null);
-                    } catch (err) {}
-                }
-            };
-
-            const exportBackup = () => {
-                const dataStr = JSON.stringify(projects, null, 2);
-                const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
-                const linkElement = document.createElement('a');
-                linkElement.setAttribute('href', dataUri);
-                linkElement.setAttribute('download', `backup_ansr_${new Date().toISOString().split('T')[0]}.json`);
-                linkElement.click();
-            };
-
-            const importBackup = async (e) => {
-                const file = e.target.files[0];
-                if (!file || !user) return;
-                const reader = new FileReader();
-                reader.onload = async (event) => {
-                    try {
-                        const importedData = JSON.parse(event.target.result);
-                        if (!window.confirm(`Vai importar ${importedData.length} projetos. Confirma?`)) return;
-                        for (const proj of importedData) {
-                            const { id, ...projectData } = proj;
-                            await setDoc(doc(db, DB_COLLECTION, id || Date.now().toString()), projectData);
-                        }
-                    } catch (error) { console.error(error); }
-                    e.target.value = null;
-                };
-                reader.readAsText(file);
-            };
-
-            const triggerImport = () => fileInputRef.current && fileInputRef.current.click();
-
-            const closeTaskModal = () => {
-                setIsTaskModalOpen(false);
-                setEditingId(null);
-                setTaskData({ title: '', start: '', end: '', priority: 'Média', owner: '', team: '', company: '' });
-            };
-
-            const openEditTask = (p) => {
-                setEditingId(p.id);
-                setTaskData({
-                    title: p.title || '', start: p.start || '', end: p.end || '',
-                    priority: p.priority || 'Média', owner: p.owner || '', team: p.team || '', company: p.company || ''
-                });
-                setIsTaskModalOpen(true);
-            };
-
-            const saveProject = async (e) => {
-                e.preventDefault();
-                try {
-                    if (editingId) await updateDoc(doc(db, DB_COLLECTION, editingId), taskData);
-                    else await addDoc(collection(db, DB_COLLECTION), { ...taskData, status: 'Pendente', subtasks: [], createdAt: serverTimestamp(), createdBy: user.uid });
-                    closeTaskModal();
-                } catch (err) {}
-            };
-
-            const deleteProject = async (id) => {
-                if (window.confirm("Eliminar este projeto permanentemente?")) await deleteDoc(doc(db, DB_COLLECTION, id));
-            };
-
-            const updateStatus = async (id, newStatus) => {
-                await updateDoc(doc(db, DB_COLLECTION, id), { status: newStatus });
-            };
-
-            const saveSubtask = async (e) => {
-                e.preventDefault();
-                const p = projects.find(proj => proj.id === subtaskData.parentId);
-                if (!p) return;
-                let newSubs = [...(p.subtasks || [])];
-                const time = new Date().toLocaleString('pt-PT', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
-                newSubs.push({ id: Date.now().toString(), title: subtaskData.title, completed: false, progress: 0, notes: subtaskData.note.trim() ? [{ text: subtaskData.note, time, completed: false }] : [] });
-                await updateDoc(doc(db, DB_COLLECTION, p.id), { subtasks: newSubs, status: p.status === 'Pendente' || p.status === 'Planeamento' ? 'Andamento' : p.status });
-                setIsSubtaskModalOpen(false);
-                setSubtaskData({ parentId: '', subId: null, title: '', note: '' });
-            };
-
-            const editSubtask = async (projectId, subtaskId, newTitle) => {
-                const project = projects.find(p => p.id === projectId);
-                const newSubtasks = project.subtasks.map(sub => sub.id === subtaskId ? { ...sub, title: newTitle } : sub);
-                await updateDoc(doc(db, DB_COLLECTION, projectId), { subtasks: newSubtasks });
-            };
-
-            const deleteSubtask = async (projectId, subtaskId) => {
-                if (!window.confirm("Remover permanentemente?")) return;
-                const project = projects.find(p => p.id === projectId);
-                const newSubtasks = project.subtasks.filter(sub => sub.id !== subtaskId);
-                await updateDoc(doc(db, DB_COLLECTION, projectId), { subtasks: newSubtasks });
-            };
-
-            const toggleSub = async (tId, sId) => {
-                const p = projects.find(proj => proj.id === tId);
-                const newSubs = p.subtasks.map(s => s.id === sId ? { ...s, completed: !s.completed, progress: !s.completed ? 100 : 0 } : s);
-                await updateDoc(doc(db, DB_COLLECTION, tId), { subtasks: newSubs });
-            };
-
-            const addHistoryNote = async (projectId, subtaskId, text) => {
-                const project = projects.find(p => p.id === projectId);
-                const time = new Date().toLocaleString('pt-PT', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
-                const newSubtasks = project.subtasks.map(sub => {
-                    if (sub.id === subtaskId) {
-                        const newNotes = [...(sub.notes || []), { text, time, completed: false }];
-                        return { ...sub, notes: newNotes };
-                    }
-                    return sub;
-                });
-                await updateDoc(doc(db, DB_COLLECTION, projectId), { subtasks: newSubtasks });
-            };
-
-            const deleteHistoryNote = async (projectId, subtaskId, noteIndex) => {
-                const project = projects.find(p => p.id === projectId);
-                const newSubtasks = project.subtasks.map(sub => {
-                    if (sub.id === subtaskId) {
-                        const newNotes = [...(sub.notes || [])];
-                        newNotes.splice(noteIndex, 1);
-                        return { ...sub, notes: newNotes };
-                    }
-                    return sub;
-                });
-                await updateDoc(doc(db, DB_COLLECTION, projectId), { subtasks: newSubtasks });
-            };
-
             const stats = {
                 total: projects.length,
                 pending: projects.filter(p => p.status === 'Pendente').length,
@@ -563,7 +639,7 @@
 
             if (!user) {
                 return (
-                    <div className="min-h-screen login-bg flex items-center justify-center p-6">
+                    <div className="min-h-screen flex items-center justify-center p-6 bg-slate-900">
                         <div className="bg-white p-10 rounded-[2rem] shadow-2xl w-full max-w-md animate-slide text-center relative">
                             <h2 className="text-2xl font-black text-slate-900 mb-2">Portal IDW</h2>
                             <p className="text-slate-400 font-bold text-[10px] uppercase tracking-[0.2em] mb-8">Gestão de Projetos</p>
@@ -582,32 +658,50 @@
 
             return (
                 <div className="bg-slate-50 min-h-screen text-slate-800 flex flex-col">
-                    <div className={`sticky-header-container px-4 md:px-8 ${isScrolled ? 'scrolled-header' : ''}`}>
-                        <div className="max-w-[1600px] mx-auto flex items-center justify-between">
+                    <div className={`sticky-header-container px-4 md:px-10 ${isScrolled ? 'scrolled-header' : ''}`}>
+                        <div className="max-w-[1700px] mx-auto flex items-center justify-between">
                             <div className="logo-section-print">
-                                <div className="logo-box"><i className="fas fa-layer-group text-xs"></i></div>
-                                <div className="logo-text"><h1>IDW</h1><span>Gestão 2026</span></div>
+                                <div className="logo-box"><i className="fas fa-layer-group text-sm"></i></div>
+                                <div className="logo-text">
+                                    <h1>IDW</h1>
+                                    <span>Gestão 2026 • <b className="text-rose-500 font-bold lowercase italic ml-1 tracking-tight text-[12px]">{user.email}</b></span>
+                                </div>
+                            </div>
+
+                            <div className="flex-1 flex justify-center">
+                                <div className="stats-pill-container shadow-sm">
+                                    <div className="stat-item"><div className="dot bg-amber-400"></div><span>{stats.progress} EXECUÇÃO</span></div>
+                                    <div className="stat-item"><div className="dot bg-emerald-400"></div><span>{stats.completed} FIM</span></div>
+                                    <div className="stat-item"><div className="dot bg-rose-400"></div><span>{stats.pending} PEND</span></div>
+                                    <div className="stat-item"><div className="dot bg-sky-400"></div><span>{stats.planning} PLAN</span></div>
+                                </div>
                             </div>
 
                             <div className="flex items-center gap-2">
                                 <div className="search-container-print">
-                                    <i className="fas fa-magnifying-glass text-slate-400 text-[12px]"></i>
+                                    <i className="fas fa-magnifying-glass text-slate-400 text-sm"></i>
                                     <input type="text" placeholder="Pesquisar..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
                                 </div>
-                                <button onClick={() => setIsTaskModalOpen(true)} className="btn-main-print shadow-md ml-2">
-                                    <i className="fas fa-plus text-[9px]"></i> NOVO PROJETO
+
+                                <div className="flex items-center gap-1 border-l border-slate-100 pl-2">
+                                    <button onClick={exportBackup} className="icon-btn-print" title="Backup"><i className="fas fa-file-export text-[14px]"></i></button>
+                                    <button onClick={triggerImport} className="icon-btn-print" title="Restore"><i className="fas fa-file-import text-[14px]"></i></button>
+                                    <input type="file" ref={fileInputRef} onChange={importBackup} accept=".json" style={{ display: 'none' }} />
+                                    <button onClick={() => setGlobalCollapse(prev => ({ collapsed: !prev.collapsed, count: prev.count + 1 }))} className="icon-btn-print" title="Expandir/Recolher"><i className={globalCollapse.collapsed ? 'fas fa-up-right-and-down-left-from-center' : 'fas fa-minimize'}></i></button>
+                                    <button onClick={() => setHideCompleted(!hideCompleted)} className="icon-btn-print" title="Filtro Concluídos"><i className={hideCompleted ? 'fas fa-eye text-indigo-500' : 'fas fa-eye-slash'}></i></button>
+                                </div>
+
+                                <button onClick={() => setIsTaskModalOpen(true)} className="btn-main-print shadow-md hover:brightness-105 transition-all ml-2">
+                                    <i className="fas fa-plus text-[10px]"></i> NOVO PROJETO
                                 </button>
-                                <button onClick={handleLogout} className="w-10 h-10 flex items-center justify-center text-rose-500 hover:bg-rose-50 rounded-full transition-all">
-                                    <i className="fas fa-power-off"></i>
-                                </button>
+                                <button onClick={handleLogout} className="btn-logout-print ml-1"><i className="fas fa-power-off"></i></button>
                             </div>
                         </div>
                     </div>
 
-                    {}
-                    <main className="max-w-[1600px] mx-auto px-4 md:px-8 py-6 flex-grow w-full">
-                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                            <div className="lg:col-span-8 space-y-6">
+                    <main className="max-w-[1700px] mx-auto px-4 md:px-12 py-8 flex-grow w-full">
+                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+                            <div className="lg:col-span-8 space-y-8">
                                 {filteredProjects.map(p => (
                                     <ProjectCard 
                                         key={p.id} p={p} 
@@ -621,7 +715,9 @@
                                         onEditSubtask={(sId, nTitle) => editSubtask(p.id, sId, nTitle)}
                                         onDeleteSubtask={(sId) => deleteSubtask(p.id, sId)}
                                         onAddHistoryNote={(sId, txt) => addHistoryNote(p.id, sId, txt)}
+                                        onEditHistoryNote={(sId, nIdx, txt) => editHistoryNote(p.id, sId, nIdx, txt)}
                                         onDeleteHistoryNote={(sId, nIdx) => deleteHistoryNote(p.id, sId, nIdx)}
+                                        onToggleHistoryNote={(sId, nIdx) => toggleHistoryNote(p.id, sId, nIdx)}
                                         onAddSub={() => { setSubtaskData({ parentId: p.id, subId: null, title: '', note: '' }); setIsSubtaskModalOpen(true); }}
                                     />
                                 ))}
@@ -649,39 +745,39 @@
                     {}
                     {isTaskModalOpen && (
                         <div className="fixed inset-0 z-50 modal-backdrop flex items-center justify-center p-4">
-                            <div className="bg-white rounded-[2rem] w-full max-w-xl p-6 md:p-8 animate-slide overflow-y-auto max-h-[90vh] shadow-2xl border border-slate-100">
-                                <div className="flex justify-between items-center mb-6">
+                            <div className="bg-white rounded-[2rem] w-full max-w-xl modal-compact-container animate-slide overflow-y-auto max-h-[90vh] shadow-2xl border border-slate-100 flex flex-col">
+                                <div className="flex justify-between items-center mb-4">
                                     <h3 className="text-xl font-black text-slate-900 tracking-tight">{editingId ? 'Editar Registo' : 'Novo Projeto'}</h3>
                                     <button onClick={closeTaskModal} className="w-10 h-10 rounded-xl bg-slate-50 text-slate-400 hover:text-rose-500 transition-colors"><i className="fas fa-times"></i></button>
                                 </div>
                                 <form onSubmit={saveProject} className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
                                     <div className="col-span-full space-y-1">
                                         <label className="text-[9px] font-black text-slate-400 uppercase ml-2 tracking-widest">Identificação do Projeto</label>
-                                        <input required type="text" placeholder="Nome do Projeto..." value={taskData.title} onChange={e => setTaskData({...taskData, title: e.target.value})} className="w-full p-3 bg-slate-50 border border-slate-100 rounded-xl outline-none focus:ring-4 focus:ring-indigo-500/5 font-bold"/>
+                                        <input required type="text" placeholder="Nome do Projeto..." value={taskData.title} onChange={e => setTaskData({...taskData, title: e.target.value})} className="w-full bg-slate-50 border border-slate-100 rounded-xl outline-none focus:ring-4 focus:ring-indigo-500/5 font-bold"/>
                                     </div>
                                     <div className="space-y-1">
                                         <label className="text-[9px] font-black text-slate-400 uppercase ml-2 tracking-widest">Data Início</label>
-                                        <input required type="date" value={taskData.start} onChange={e => setTaskData({...taskData, start: e.target.value})} className="w-full p-3 bg-slate-50 border border-slate-100 rounded-xl outline-none font-bold"/>
+                                        <input required type="date" value={taskData.start} onChange={e => setTaskData({...taskData, start: e.target.value})} className="w-full bg-slate-50 border border-slate-100 rounded-xl outline-none font-bold"/>
                                     </div>
                                     <div className="space-y-1">
                                         <label className="text-[9px] font-black text-slate-400 uppercase ml-2 tracking-widest">Data Limite</label>
-                                        <input required type="date" value={taskData.end} onChange={e => setTaskData({...taskData, end: e.target.value})} className="w-full p-3 bg-slate-50 border border-slate-100 rounded-xl outline-none font-bold text-rose-600"/>
+                                        <input required type="date" value={taskData.end} onChange={e => setTaskData({...taskData, end: e.target.value})} className="w-full bg-slate-50 border border-slate-100 rounded-xl outline-none font-bold text-rose-600"/>
                                     </div>
                                     <div className="space-y-1">
                                         <label className="text-[9px] font-black text-slate-400 uppercase ml-2 tracking-widest">Prioridade</label>
-                                        <select value={taskData.priority} onChange={e => setTaskData({...taskData, priority: e.target.value})} className="w-full p-3 bg-slate-50 border border-slate-100 rounded-xl outline-none font-bold"><option>Baixa</option><option>Média</option><option>Alta</option></select>
+                                        <select value={taskData.priority} onChange={e => setTaskData({...taskData, priority: e.target.value})} className="w-full bg-slate-50 border border-slate-100 rounded-xl outline-none font-bold"><option>Baixa</option><option>Média</option><option>Alta</option></select>
                                     </div>
                                     <div className="space-y-1">
                                         <label className="text-[9px] font-black text-slate-400 uppercase ml-2 tracking-widest">Responsável (Owner)</label>
-                                        <input type="text" placeholder="Nome..." value={taskData.owner} onChange={e => setTaskData({...taskData, owner: e.target.value})} className="w-full p-3 bg-slate-50 border border-slate-100 rounded-xl outline-none font-bold"/>
+                                        <input type="text" placeholder="Nome..." value={taskData.owner} onChange={e => setTaskData({...taskData, owner: e.target.value})} className="w-full bg-slate-50 border border-slate-100 rounded-xl outline-none font-bold"/>
                                     </div>
                                     <div className="space-y-1">
                                         <label className="text-[9px] font-black text-slate-400 uppercase ml-2 tracking-widest">Equipa</label>
-                                        <input type="text" placeholder="Dept..." value={taskData.team} onChange={e => setTaskData({...taskData, team: e.target.value})} className="w-full p-3 bg-slate-50 border border-slate-100 rounded-xl outline-none font-bold"/>
+                                        <input type="text" placeholder="Dept..." value={taskData.team} onChange={e => setTaskData({...taskData, team: e.target.value})} className="w-full bg-slate-50 border border-slate-100 rounded-xl outline-none font-bold"/>
                                     </div>
                                     <div className="space-y-1">
                                         <label className="text-[9px] font-black text-slate-400 uppercase ml-2 tracking-widest">Cliente</label>
-                                        <input type="text" placeholder="Entidade..." value={taskData.company} onChange={e => setTaskData({...taskData, company: e.target.value})} className="w-full p-3 bg-slate-50 border border-slate-100 rounded-xl outline-none font-bold"/>
+                                        <input type="text" placeholder="Entidade..." value={taskData.company} onChange={e => setTaskData({...taskData, company: e.target.value})} className="w-full bg-slate-50 border border-slate-100 rounded-xl outline-none font-bold"/>
                                     </div>
                                     <div className="col-span-full pt-4 flex gap-3">
                                         <button type="button" onClick={closeTaskModal} className="flex-1 py-3 text-slate-400 font-black uppercase text-[10px] tracking-widest hover:bg-slate-50 rounded-xl">Cancelar</button>
@@ -691,23 +787,24 @@
                             </div>
                         </div>
                     )}
-                    
+
+                    {}
                     {isSubtaskModalOpen && (
-                        <div className="fixed inset-0 z-50 modal-backdrop flex items-center justify-center p-6">
-                            <div className="bg-white rounded-[2rem] w-full max-w-sm p-8 animate-slide shadow-2xl">
-                                <h3 className="text-lg font-black mb-6 tracking-tight text-slate-900 uppercase">Adicionar Atividade</h3>
+                        <div className="fixed inset-0 z-50 modal-backdrop flex items-center justify-center p-4">
+                            <div className="bg-white rounded-[2rem] w-full max-w-md p-6 animate-slide shadow-2xl border border-slate-100">
+                                <h3 className="text-xl font-black mb-4 tracking-tight text-slate-900 uppercase">Adicionar Tarefa</h3>
                                 <form onSubmit={saveSubtask} className="space-y-4">
                                     <div className="space-y-1">
-                                        <label className="text-[9px] font-black text-slate-400 uppercase ml-1">Título</label>
-                                        <input required type="text" placeholder="Atividade..." value={subtaskData.title} onChange={e => setSubtaskData({...subtaskData, title: e.target.value})} className="w-full p-3 bg-slate-50 border border-slate-100 rounded-xl outline-none font-bold text-xs"/>
+                                        <label className="text-[9px] font-black text-slate-400 uppercase ml-2 tracking-widest">Título da Atividade</label>
+                                        <input required type="text" placeholder="Ex: Preparar documentação..." value={subtaskData.title} onChange={e => setSubtaskData({...subtaskData, title: e.target.value})} className="w-full p-3 bg-slate-50 border border-slate-100 rounded-xl outline-none font-bold"/>
                                     </div>
                                     <div className="space-y-1">
-                                        <label className="text-[9px] font-black text-slate-400 uppercase ml-1">Relatório Inicial</label>
-                                        <textarea placeholder="Descrição..." required value={subtaskData.note} onChange={e => setSubtaskData({...subtaskData, note: e.target.value})} className="note-input" rows="3"/>
+                                        <label className="text-[9px] font-black text-slate-400 uppercase ml-2 tracking-widest">Relatório Inicial</label>
+                                        <textarea placeholder="Requisitos..." required value={subtaskData.note} onChange={e => setSubtaskData({...subtaskData, note: e.target.value})} className="note-input font-medium" rows="3"/>
                                     </div>
-                                    <div className="flex gap-3 pt-2">
-                                        <button type="button" onClick={() => setIsSubtaskModalOpen(false)} className="flex-1 py-3 text-slate-400 font-black uppercase text-[9px] rounded-xl">Voltar</button>
-                                        <button type="submit" className="flex-1 py-3 bg-slate-900 text-white rounded-xl font-black uppercase text-[9px] tracking-widest shadow-lg">Registar</button>
+                                    <div className="flex gap-3 pt-4">
+                                        <button type="button" onClick={() => setIsSubtaskModalOpen(false)} className="flex-1 py-3 text-slate-400 font-black uppercase tracking-widest text-[10px] hover:bg-slate-50 rounded-xl">Voltar</button>
+                                        <button type="submit" className="flex-1 py-3 bg-slate-900 text-white rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-black shadow-lg transition-all">Registar</button>
                                     </div>
                                 </form>
                             </div>
@@ -717,26 +814,33 @@
             );
         }
 
-        function ProjectCard({ p, isCompact, globalCollapse, searchTerm, onEdit, onDelete, onStatus, onToggleSub, onEditSubtask, onDeleteSubtask, onAddSub, onAddHistoryNote, onDeleteHistoryNote }) {
+        function ProjectCard({ p, isCompact, globalCollapse, searchTerm, onEdit, onDelete, onStatus, onToggleSub, onEditSubtask, onDeleteSubtask, onAddSub, onAddHistoryNote, onEditHistoryNote, onDeleteHistoryNote, onToggleHistoryNote }) {
             const [isCollapsed, setIsCollapsed] = useState(isCompact);
             const [addingToSubId, setAddingToSubId] = useState(null);
             const [newNoteText, setNewNoteText] = useState("");
+            const [editingNote, setEditingNote] = useState({ subId: null, idx: null });
+            const [editNoteText, setEditNoteText] = useState("");
+            const [editingSubId, setEditingSubId] = useState(null);
+            const [editSubTitle, setEditSubTitle] = useState("");
 
             useEffect(() => { setIsCollapsed(isCompact); }, [isCompact]);
             useEffect(() => { if (globalCollapse && globalCollapse.count > 0 && p.status !== 'Concluído') setIsCollapsed(globalCollapse.collapsed); }, [globalCollapse.count]);
 
             const total = p.subtasks?.length || 0;
-            const progress = total > 0 ? Math.round((p.subtasks.reduce((acc, s) => acc + (s.progress || (s.completed ? 100 : 0)), 0)) / total) : (p.status === 'Concluído' ? 100 : 0);
+            const sumProgress = p.subtasks?.reduce((acc, sub) => acc + (sub.progress ?? (sub.completed ? 100 : 0)), 0) || 0;
+            const progress = total > 0 ? Math.round(sumProgress / total) : (p.status === 'Concluído' ? 100 : 0);
             
+            const handleAddNote = (sub) => { if (!newNoteText.trim()) return; onAddHistoryNote(sub.id, newNoteText); setNewNoteText(""); setAddingToSubId(null); };
+            const handleSaveEditNote = (subId, idx) => { if (editNoteText.trim() !== "") onEditHistoryNote(subId, idx, editNoteText); setEditingNote({ subId: null, idx: null }); };
+
             return (
                 <div className={`glass-card rounded-[1.5rem] p-5 transition-all ${isCollapsed ? 'opacity-70 bg-slate-50/50' : 'bg-white'}`}>
                     <div className="flex flex-col md:flex-row justify-between gap-6">
                         <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-3 mb-2">
-                                <span className={`status-pill status-${p.status}`}>{p.status}</span>
+                                <span className={`status-pill status-${p.status}`}>{p.status === 'Andamento' ? 'Em Execução' : p.status}</span>
                                 <span className="text-[9px] font-black uppercase text-slate-400 bg-slate-100 px-2 py-1 rounded-md">PRIO: {p.priority}</span>
                             </div>
-                            {/* AJUSTE: Removido truncate para não cortar título e adicionado quebra de linha se necessário */}
                             <h3 className="text-lg md:text-xl font-black text-slate-900 mb-1 leading-tight break-words">
                                 <HighlightedText text={p.title} term={searchTerm} />
                             </h3>
@@ -755,6 +859,7 @@
                             <div className="flex flex-col gap-1.5">
                                 <button onClick={() => setIsCollapsed(!isCollapsed)} className="w-8 h-8 rounded-lg bg-white shadow-sm border border-slate-100 flex items-center justify-center text-slate-400 hover:text-indigo-600"><i className={`fas fa-angle-${isCollapsed ? 'down' : 'up'}`}></i></button>
                                 <button onClick={onEdit} className="w-8 h-8 rounded-lg bg-white shadow-sm border border-slate-100 flex items-center justify-center text-slate-400 hover:text-indigo-600"><i className="fas fa-edit"></i></button>
+                                <button onClick={() => onDelete(p.id)} className="w-8 h-8 rounded-lg bg-white shadow-sm border border-slate-100 flex items-center justify-center text-slate-400 hover:text-rose-600"><i className="fas fa-trash-can"></i></button>
                             </div>
                         </div>
                     </div>
@@ -763,7 +868,7 @@
                         <div className="mt-6 pt-6 border-t border-slate-100 animate-slide space-y-4">
                             <div className="flex items-center justify-between gap-4 mb-2">
                                 <div className="flex-1">
-                                    <div className="flex justify-between text-[9px] font-black text-slate-400 uppercase mb-1"><span>Progresso</span><span>{progress}%</span></div>
+                                    <div className="flex justify-between text-[9px] font-black text-slate-400 uppercase mb-1"><span>Progresso Real</span><span>{progress}%</span></div>
                                     <div className="progress-bar-container"><div className="progress-bar-fill bg-indigo-500" style={{width: `${progress}%`}}></div></div>
                                 </div>
                                 <button onClick={onAddSub} className="bg-indigo-600 text-white text-[9px] px-4 py-2 rounded-lg font-black uppercase tracking-widest shadow-md">Nova Atividade</button>
@@ -771,31 +876,57 @@
 
                             <div className="grid grid-cols-1 gap-3">
                                 {p.subtasks?.map(sub => (
-                                    <div key={sub.id} className="bg-slate-50/50 p-3 rounded-xl border border-slate-100 group/sub">
+                                    <div key={sub.id} className="bg-slate-50/50 p-4 rounded-xl border border-slate-100 group/sub">
                                         <div className="flex items-center justify-between gap-3">
                                             <div className="flex items-center gap-3 flex-1">
-                                                <input type="checkbox" checked={sub.completed} onChange={() => onToggleSub(sub.id)} className="w-4 h-4 rounded border-slate-200 text-indigo-600 cursor-pointer"/>
-                                                <p className={`text-xs font-bold ${sub.completed ? 'line-through text-slate-300' : 'text-slate-700'}`}>{sub.title}</p>
+                                                <input type="checkbox" checked={sub.completed} onChange={() => onToggleSub(sub.id)} className="w-5 h-5 rounded border-slate-200 text-indigo-600 cursor-pointer"/>
+                                                <div className="flex-1">
+                                                    <p className={`text-xs font-bold ${sub.completed ? 'line-through text-slate-300' : 'text-slate-700'}`}>{sub.title}</p>
+                                                    <div className="h-1 bg-slate-200 w-24 rounded-full mt-1 overflow-hidden">
+                                                        <div className="h-full bg-indigo-400 transition-all" style={{width: `${sub.progress ?? (sub.completed ? 100 : 0)}%`}}></div>
+                                                    </div>
+                                                </div>
                                             </div>
-                                            <div className="flex items-center gap-2 opacity-0 group-hover/sub:opacity-100 transition-opacity">
-                                                <button onClick={() => onDeleteSubtask(sub.id)} className="text-slate-300 hover:text-rose-500"><i className="fas fa-trash-can text-[10px]"></i></button>
-                                                <button onClick={() => setAddingToSubId(addingToSubId === sub.id ? null : sub.id)} className="text-indigo-500 font-black text-[9px] uppercase">Nota</button>
+                                            <div className="flex items-center gap-2">
+                                                <button onClick={() => setAddingToSubId(addingToSubId === sub.id ? null : sub.id)} className="bg-white border border-slate-100 text-indigo-500 px-3 py-1.5 rounded-lg font-black text-[9px] uppercase shadow-sm">Nota</button>
+                                                <button onClick={() => onDeleteSubtask(sub.id)} className="text-rose-200 hover:text-rose-500 transition-colors"><i className="fas fa-trash-can text-[11px]"></i></button>
                                             </div>
                                         </div>
                                         {addingToSubId === sub.id && (
-                                            <div className="mt-2 space-y-2">
+                                            <div className="mt-3 space-y-2 animate-slide">
                                                 <textarea className="note-input" placeholder="Detalhes..." value={newNoteText} onChange={(e) => setNewNoteText(e.target.value)} rows="2"/>
-                                                <div className="flex justify-end"><button onClick={() => { if(newNoteText.trim()) onAddHistoryNote(sub.id, newNoteText); setNewNoteText(""); setAddingToSubId(null); }} className="bg-slate-900 text-white text-[8px] px-3 py-1.5 rounded-lg uppercase">Guardar</button></div>
+                                                <div className="flex justify-end"><button onClick={() => handleAddNote(sub)} className="bg-slate-900 text-white text-[8px] px-3 py-1.5 rounded-lg uppercase font-black">Registar Cloud</button></div>
                                             </div>
                                         )}
                                         {sub.notes?.length > 0 && (
-                                            <div className="mt-2 pl-4 border-l-2 border-indigo-100 space-y-2">
-                                                {sub.notes.map((n, idx) => (
-                                                    <div key={idx} className="text-[10px] text-slate-500 bg-white p-2 rounded-lg border border-slate-100 flex justify-between group/note">
-                                                        <span>{n.text} <span className="text-[8px] text-slate-300 ml-2">{n.time}</span></span>
-                                                        <button onClick={() => onDeleteHistoryNote(sub.id, idx)} className="opacity-0 group-hover/note:opacity-100 text-rose-300"><i className="fas fa-times"></i></button>
-                                                    </div>
-                                                ))}
+                                            <div className="mt-3 pl-4 border-l-2 border-indigo-100 space-y-2">
+                                                {sub.notes.map((n, idx) => {
+                                                    const isEditing = editingNote.subId === sub.id && editingNote.idx === idx;
+                                                    return (
+                                                        <div key={idx} className="text-[10px] text-slate-500 bg-white p-2.5 rounded-lg border border-slate-100 flex items-start gap-3 group/note">
+                                                            <input type="checkbox" checked={n.completed || false} onChange={() => onToggleHistoryNote(sub.id, idx)} className="mt-0.5 w-3 h-3 rounded border-slate-200 text-indigo-500 cursor-pointer"/>
+                                                            <div className="flex-1">
+                                                                {isEditing ? (
+                                                                    <div className="space-y-2">
+                                                                        <textarea className="note-input w-full" value={editNoteText} onChange={(e) => setEditNoteText(e.target.value)} rows="2"/>
+                                                                        <div className="flex justify-end gap-2"><button onClick={() => setEditingNote({subId:null, idx:null})} className="text-[8px] uppercase font-black text-slate-400">Sair</button><button onClick={() => handleSaveEditNote(sub.id, idx)} className="bg-indigo-600 text-white px-2 py-1 rounded text-[8px] uppercase font-black">Salvar</button></div>
+                                                                    </div>
+                                                                ) : (
+                                                                    <>
+                                                                        <span className={n.completed ? 'line-through opacity-40' : ''}>{n.text}</span>
+                                                                        <div className="flex justify-between items-center mt-1">
+                                                                            <span className="text-[7px] text-slate-300 font-bold uppercase tracking-widest">{n.time} {n.lastEdit ? '• EDITADO' : ''}</span>
+                                                                            <div className="flex gap-2 opacity-0 group-hover/note:opacity-100 transition-opacity">
+                                                                                <button onClick={() => { setEditingNote({subId: sub.id, idx}); setEditNoteText(n.text); }} className="text-indigo-300 hover:text-indigo-600"><i className="fas fa-pencil"></i></button>
+                                                                                <button onClick={() => onDeleteHistoryNote(sub.id, idx)} className="text-rose-200 hover:text-rose-500"><i className="fas fa-times"></i></button>
+                                                                            </div>
+                                                                        </div>
+                                                                    </>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
                                             </div>
                                         )}
                                     </div>
