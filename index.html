@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cloud Projects - Wilson Costa</title>
+    <title>Gestão de Projetos - IDW</title>
     
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -11,48 +11,43 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&display=swap');
+        
+        :root {
+            --primary: #4f46e5;
+            --bg-main: #f8fafc;
+        }
+
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #f1f5f9;
-            color: #0f172a;
-            scroll-behavior: smooth;
+            background-color: var(--bg-main);
+            color: #1e293b;
+            margin: 0;
+            overflow-x: hidden;
         }
 
-        .custom-scrollbar::-webkit-scrollbar {
-            width: 6px;
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
         }
-        .custom-scrollbar::-webkit-scrollbar-track {
-            background: #f1f5f9;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: #cbd5e1;
-            border-radius: 10px;
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
         }
 
-        .glass-panel {
-            background: rgba(255, 255, 255, 0.9);
-            backdrop-filter: blur(8px);
-            border: 1px solid rgba(226, 232, 240, 0.8);
-        }
-
-        .project-card {
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-        }
-        .project-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        .glass-card {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            transition: all 0.3s ease;
         }
 
         .status-pill {
-            padding: 4px 10px;
-            border-radius: 9999px;
-            font-size: 11px;
+            padding: 4px 12px;
+            border-radius: 6px;
+            font-size: 0.7rem;
             font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 0.025em;
         }
 
         .status-Pendente { background: #fee2e2; color: #991b1b; }
@@ -60,37 +55,73 @@
         .status-Planeamento { background: #e0f2fe; color: #075985; }
         .status-Concluído { background: #dcfce7; color: #166534; }
 
-        .btn-primary {
-            background: #4f46e5;
-            transition: all 0.2s;
-        }
-        .btn-primary:hover {
-            background: #4338ca;
-            transform: scale(1.02);
+        .progress-bar-container {
+            height: 8px;
+            background: #f1f5f9;
+            border-radius: 10px;
+            overflow: hidden;
         }
 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+        .progress-bar-fill {
+            height: 100%;
+            transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        .animate-in { animation: fadeIn 0.4s ease-out forwards; }
+
+        .sticky-header-container {
+            position: sticky;
+            top: 0;
+            z-index: 40;
+            background-color: rgba(248, 250, 252, 0.95);
+            backdrop-filter: blur(12px);
+            padding-top: 0.75rem; 
+            padding-bottom: 0.5rem; 
+            border-bottom: 1px solid transparent;
+        }
+
+        .scrolled-header {
+            border-bottom-color: #e2e8f0;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05);
+        }
 
         .modal-backdrop {
-            background: rgba(15, 23, 42, 0.4);
+            background: rgba(15, 23, 42, 0.6);
             backdrop-filter: blur(4px);
         }
 
-        .priority-badge {
-            font-size: 9px;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-weight: 800;
-            text-transform: uppercase;
+        @keyframes slideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .animate-slide { animation: slideUp 0.3s ease-out; }
+
+        .login-bg {
+            background: linear-gradient(135deg, #4f46e5 0%, #312e81 100%);
+        }
+
+        .note-input {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            width: 100%;
+            resize: none;
+            font-size: 11px;
+            color: #1e293b;
+            line-height: 1.5;
+            padding: 10px;
+            outline: none;
+            border-radius: 12px;
+            box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.02);
+        }
+
+        .search-highlight {
+            background-color: #fef08a;
+            color: #854d0e;
+            padding: 0 2px;
+            border-radius: 2px;
+            font-weight: 700;
         }
     </style>
 </head>
-<body class="custom-scrollbar">
-
+<body>
     <div id="root"></div>
 
     <script type="text/babel" data-type="module">
@@ -107,6 +138,7 @@
             getFirestore, 
             collection, 
             doc, 
+            setDoc,
             onSnapshot, 
             addDoc, 
             updateDoc, 
@@ -116,34 +148,52 @@
 
         const { useState, useEffect, useRef, useMemo } = React;
 
-        // CONFIGURAÇÃO MANTIDA CONFORME CÓDIGO DE PRODUÇÃO
         const firebaseConfig = {
-            apiKey: "AIzaSyBou2nfAg9EL2kam8y1_8qPtRcUfJvo9AE",
-            authDomain: "ger-projeto-ansr.firebaseapp.com",
-            projectId: "ger-projeto-ansr",
-            storageBucket: "ger-projeto-ansr.firebasestorage.app",
-            messagingSenderId: "409599611361",
-            appId: "1:409599611361:web:f9dd2ab0915e14ed3902a0",
-            measurementId: "G-PV4NR6B03C"
+            apiKey: "AIzaSyDpFpNmX136PvXJ_xrIXAhyY8jLC3AlQlE",
+            authDomain: "ansr-idw.firebaseapp.com",
+            projectId: "ansr-idw",
+            storageBucket: "ansr-idw.firebasestorage.app",
+            messagingSenderId: "416766004637",
+            appId: "1:416766004637:web:115f1fda7d2226e08fb374",
+            measurementId: "G-ME0M61BPHD"
         };
-
-        const appIdentifier = "projeto-wilson-2026";
+        
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
+        const DB_COLLECTION = 'projects';
+
+        function HighlightedText({ text, term }) {
+            if (!term || !term.trim() || !text) return <span>{text}</span>;
+            const parts = text.toString().split(new RegExp(`(${term})`, 'gi'));
+            return (
+                <span>
+                    {parts.map((part, i) => 
+                        part.toLowerCase() === term.toLowerCase() 
+                            ? <mark key={i} className="search-highlight">{part}</mark> 
+                            : part
+                    )}
+                </span>
+            );
+        }
 
         function App() {
             const [user, setUser] = useState(null);
             const [projects, setProjects] = useState([]);
             const [loading, setLoading] = useState(true);
             const [authLoading, setAuthLoading] = useState(true);
+            const [isScrolled, setIsScrolled] = useState(false);
             const [hideCompleted, setHideCompleted] = useState(false);
+            const [globalCollapse, setGlobalCollapse] = useState({ collapsed: false, count: 0 });
             const [searchTerm, setSearchTerm] = useState('');
-
             const [email, setEmail] = useState('');
             const [password, setPassword] = useState('');
             const [loginError, setLoginError] = useState(null);
             const [isLoggingIn, setIsLoggingIn] = useState(false);
+
+            const chartRef = useRef(null);
+            const chartInstance = useRef(null);
+            const fileInputRef = useRef(null);
 
             const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
             const [isSubtaskModalOpen, setIsSubtaskModalOpen] = useState(false);
@@ -151,62 +201,54 @@
             const [taskData, setTaskData] = useState({ title: '', start: '', end: '', priority: 'Média', owner: '', team: '', company: '' });
             const [subtaskData, setSubtaskData] = useState({ parentId: '', subId: null, title: '', note: '' });
 
-            const chartRef = useRef(null);
-            const chartInstance = useRef(null);
+            const sortedProjects = useMemo(() => {
+                const statusWeight = { 'Andamento': 1, 'Pendente': 2, 'Planeamento': 3, 'Concluído': 4 };
+                const priorityWeight = { 'Alta': 1, 'Média': 2, 'Baixa': 3 };
+                return [...projects].sort((a, b) => {
+                    if (a.status === 'Concluído' && b.status !== 'Concluído') return 1;
+                    if (a.status !== 'Concluído' && b.status === 'Concluído') return -1;
+                    if (a.status === 'Concluído') return new Date(b.end) - new Date(a.end);
+                    const sDiff = (statusWeight[a.status] || 99) - (statusWeight[b.status] || 99);
+                    if (sDiff !== 0) return sDiff;
+                    const pDiff = (priorityWeight[a.priority] || 2) - (priorityWeight[b.priority] || 2);
+                    if (pDiff !== 0) return pDiff;
+                    return (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0);
+                });
+            }, [projects]);
 
-            const filteredAndSortedProjects = useMemo(() => {
-                let filtered = projects.filter(p => 
-                    p.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                    (p.owner && p.owner.toLowerCase().includes(searchTerm.toLowerCase()))
-                );
-
+            const filteredProjects = useMemo(() => {
+                let filtered = sortedProjects;
+                if (searchTerm.trim()) {
+                    const term = searchTerm.toLowerCase();
+                    filtered = filtered.filter(p => 
+                        p.title.toLowerCase().includes(term) ||
+                        (p.owner && p.owner.toLowerCase().includes(term)) ||
+                        (p.subtasks && p.subtasks.some(s => s.title.toLowerCase().includes(term) || s.notes?.some(n => n.text.toLowerCase().includes(term))))
+                    );
+                }
                 if (hideCompleted) {
                     filtered = filtered.filter(p => p.status !== 'Concluído');
                 }
-
-                const statusWeight = { 'Andamento': 1, 'Pendente': 2, 'Planeamento': 3, 'Concluído': 4 };
-                const priorityWeight = { 'Alta': 1, 'Média': 2, 'Baixa': 3 };
-
-                return filtered.sort((a, b) => {
-                    const orderA = a.customOrder || 0;
-                    const orderB = b.customOrder || 0;
-                    if (orderA !== orderB) return orderA - orderB;
-
-                    const sA = statusWeight[a.status] || 99;
-                    const sB = statusWeight[b.status] || 99;
-                    if (sA !== sB) return sA - sB;
-
-                    if (a.status === 'Concluído') {
-                        const dateA = a.end ? new Date(a.end) : 0;
-                        const dateB = b.end ? new Date(b.end) : 0;
-                        return dateB - dateA;
-                    }
-
-                    const pA = priorityWeight[a.priority] || 2;
-                    const pB = priorityWeight[b.priority] || 2;
-                    if (pA !== pB) return pA - pB;
-
-                    return (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0);
-                });
-            }, [projects, searchTerm, hideCompleted]);
+                return filtered;
+            }, [sortedProjects, searchTerm, hideCompleted]);
 
             useEffect(() => {
-                const unsubscribe = onAuthStateChanged(auth, (u) => {
+                const handleScroll = () => setIsScrolled(window.scrollY > 10);
+                window.addEventListener('scroll', handleScroll);
+                const unsubscribeAuth = onAuthStateChanged(auth, (u) => {
                     setUser(u);
                     setAuthLoading(false);
                 });
-                return () => unsubscribe();
+                return () => {
+                    window.removeEventListener('scroll', handleScroll);
+                    unsubscribeAuth();
+                };
             }, []);
 
             useEffect(() => {
                 if (!user) return;
-                const colRef = collection(db, 'artifacts', appIdentifier, 'public', 'data', 'projects');
-                const unsubscribe = onSnapshot(colRef, (snapshot) => {
-                    const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                    setProjects(data);
-                    setLoading(false);
-                }, (error) => {
-                    console.error("Firestore Error:", error);
+                const unsubscribe = onSnapshot(collection(db, DB_COLLECTION), (snapshot) => {
+                    setProjects(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
                     setLoading(false);
                 });
                 return () => unsubscribe();
@@ -214,463 +256,243 @@
 
             useEffect(() => {
                 if (loading || !chartRef.current || projects.length === 0 || !user) return;
-                
-                const stats = {
-                    andamento: projects.filter(p => p.status === 'Andamento').length,
-                    pendente: projects.filter(p => p.status === 'Pendente').length,
-                    planeamento: projects.filter(p => p.status === 'Planeamento').length,
-                    concluido: projects.filter(p => p.status === 'Concluído').length
-                };
-
+                const statsArr = ['Andamento', 'Pendente', 'Planeamento', 'Concluído'].map(s => projects.filter(p => p.status === s).length);
                 if (chartInstance.current) chartInstance.current.destroy();
-                const ctx = chartRef.current.getContext('2d');
-                chartInstance.current = new Chart(ctx, {
+                chartInstance.current = new Chart(chartRef.current, {
                     type: 'doughnut',
                     data: {
                         labels: ['Em Execução', 'Pendente', 'Planeamento', 'Finalizados'],
-                        datasets: [{ 
-                            data: [stats.andamento, stats.pendente, stats.planeamento, stats.concluido], 
-                            backgroundColor: ['#fbbf24', '#f87171', '#38bdf8', '#4ade80'], 
-                            borderWidth: 0,
-                            hoverOffset: 10
-                        }]
+                        datasets: [{ data: statsArr, backgroundColor: ['#fef3c7', '#fee2e2', '#e0f2fe', '#dcfce7'], borderWidth: 0 }]
                     },
-                    options: { 
-                        responsive: true, 
-                        maintainAspectRatio: false, 
-                        cutout: '75%', 
-                        plugins: { legend: { display: false } } 
-                    }
+                    options: { responsive: true, maintainAspectRatio: false, cutout: '80%', plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, font: { family: 'Inter', size: 10 } } } } }
                 });
             }, [projects, loading, user]);
 
             const handleLogin = async (e) => {
                 e.preventDefault();
-                setLoginError(null);
                 setIsLoggingIn(true);
                 try {
                     await setPersistence(auth, browserSessionPersistence);
                     await signInWithEmailAndPassword(auth, email, password);
-                } catch (err) {
-                    setLoginError("Credenciais inválidas. Tente novamente.");
-                } finally {
-                    setIsLoggingIn(false);
-                }
+                } catch (err) { setLoginError("Credenciais incorretas."); }
+                finally { setIsLoggingIn(false); }
             };
 
-            const handleLogout = async () => {
-                if (window.confirm("Deseja sair do sistema?")) {
-                    await signOut(auth);
-                    setUser(null);
-                }
+            const exportBackup = () => {
+                const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(JSON.stringify(projects, null, 2));
+                const link = document.createElement('a');
+                link.setAttribute('href', dataUri);
+                link.setAttribute('download', `backup_ansr_${new Date().toISOString().split('T')[0]}.json`);
+                link.click();
             };
 
             const saveProject = async (e) => {
                 e.preventDefault();
-                if (!user) return;
-                try {
-                    const path = `artifacts/${appIdentifier}/public/data/projects`;
-                    if (editingId) {
-                        await updateDoc(doc(db, path, editingId), taskData);
-                    } else {
-                        await addDoc(collection(db, path), { 
-                            ...taskData, 
-                            status: 'Pendente', 
-                            subtasks: [], 
-                            customOrder: 0,
-                            createdAt: serverTimestamp(),
-                            createdBy: user.uid 
-                        });
-                    }
-                    setIsTaskModalOpen(false);
-                    setEditingId(null);
-                    setTaskData({ title: '', start: '', end: '', priority: 'Média', owner: '', team: '', company: '' });
-                } catch (err) { console.error(err); }
-            };
-
-            const deleteProject = async (id) => {
-                if (!window.confirm("Deseja eliminar este projeto definitivamente?")) return;
-                await deleteDoc(doc(db, 'artifacts', appIdentifier, 'public', 'data', 'projects', id));
-            };
-
-            const updateStatus = async (id, newStatus) => {
-                await updateDoc(doc(db, 'artifacts', appIdentifier, 'public', 'data', 'projects', id), { status: newStatus });
-            };
-
-            const moveProject = async (id, direction) => {
-                const project = projects.find(p => p.id === id);
-                if (!project) return;
-                const newOrder = (project.customOrder || 0) + direction;
-                await updateDoc(doc(db, 'artifacts', appIdentifier, 'public', 'data', 'projects', id), { customOrder: newOrder });
+                if (editingId) await updateDoc(doc(db, DB_COLLECTION, editingId), taskData);
+                else await addDoc(collection(db, DB_COLLECTION), { ...taskData, status: 'Pendente', subtasks: [], createdAt: serverTimestamp(), createdBy: user.uid });
+                setIsTaskModalOpen(false);
+                setEditingId(null);
+                setTaskData({ title: '', start: '', end: '', priority: 'Média', owner: '', team: '', company: '' });
             };
 
             const stats = {
                 total: projects.length,
-                andamento: projects.filter(p => p.status === 'Andamento').length,
-                concluido: projects.filter(p => p.status === 'Concluído').length,
+                pending: projects.filter(p => p.status === 'Pendente').length,
+                progress: projects.filter(p => p.status === 'Andamento').length,
+                planning: projects.filter(p => p.status === 'Planeamento').length,
+                completed: projects.filter(p => p.status === 'Concluído').length,
                 perc: projects.length ? Math.round((projects.filter(p => p.status === 'Concluído').length / projects.length) * 100) : 0
             };
 
-            if (authLoading) return (
-                <div className="h-screen flex flex-col items-center justify-center bg-indigo-700 text-white">
-                    <div className="w-12 h-12 border-4 border-white/30 border-t-white rounded-full animate-spin mb-4"></div>
-                    <p className="font-bold tracking-widest uppercase text-sm">Cloud Sync...</p>
+            if (authLoading) return <div className="h-screen flex items-center justify-center bg-indigo-600 text-white font-bold uppercase">Iniciando...</div>;
+
+            if (!user) return (
+                <div className="min-h-screen login-bg flex items-center justify-center p-4">
+                    <div className="bg-white p-10 rounded-3xl shadow-2xl w-full max-w-md animate-slide text-center">
+                        <div className="bg-indigo-100 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 text-indigo-600 text-2xl"><i className="fas fa-lock"></i></div>
+                        <h2 className="text-2xl font-black text-slate-900">Acesso Restrito</h2>
+                        <p className="text-slate-500 text-sm mb-8">ANSR - IDW</p>
+                        <form onSubmit={handleLogin} className="space-y-4">
+                            <input type="email" required value={email} onChange={e => setEmail(e.target.value)} className="w-full p-4 bg-slate-50 border border-slate-100 rounded-xl outline-none" placeholder="exemplo@ansr.pt"/>
+                            <input type="password" required value={password} onChange={e => setPassword(e.target.value)} className="w-full p-4 bg-slate-50 border border-slate-100 rounded-xl outline-none" placeholder="********"/>
+                            {loginError && <p className="text-red-500 text-xs font-bold">{loginError}</p>}
+                            <button type="submit" disabled={isLoggingIn} className="w-full bg-indigo-600 text-white py-4 rounded-xl font-bold hover:bg-indigo-700 shadow-lg">{isLoggingIn ? 'Entrando...' : 'Entrar'}</button>
+                        </form>
+                    </div>
                 </div>
             );
 
-            if (!user) {
-                return (
-                    <div className="min-h-screen bg-slate-900 flex items-center justify-center p-6">
-                        <div className="bg-white p-10 rounded-[2.5rem] shadow-2xl w-full max-w-md animate-in">
-                            <div className="text-center mb-8">
-                                <div className="bg-indigo-600 w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-xl shadow-indigo-200">
-                                    <i className="fas fa-shield-alt text-white text-3xl"></i>
+            return (
+                <div className="bg-slate-50 min-h-screen text-slate-800 flex flex-col">
+                    <div className={`sticky-header-container px-4 md:px-8 ${isScrolled ? 'scrolled-header' : ''}`}>
+                        <div className="max-w-7xl mx-auto">
+                            <header className="flex flex-col md:flex-row justify-between items-start md:items-center mb-3 gap-3">
+                                <div className="flex flex-col md:flex-row md:items-center gap-4 w-full md:w-auto">
+                                    <div>
+                                        <h1 className="text-2xl md:text-3xl font-bold text-slate-900 tracking-tight">Dashboard de Projetos</h1>
+                                        <p className="text-slate-500 font-medium text-xs md:text-sm">IDW - Wilson Costa</p>
+                                    </div>
+                                    <div className="relative flex-1 max-w-sm">
+                                        <i className="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                                        <input type="text" placeholder="Procurar..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-9 pr-4 py-1.5 bg-white border border-slate-200 rounded-xl text-xs outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm" />
+                                    </div>
                                 </div>
-                                <h2 className="text-3xl font-black text-slate-900 tracking-tight">Wilson Costa</h2>
-                                <p className="text-slate-500 text-sm font-semibold mt-1">Dashboard de Projetos v3.0</p>
+                                <div className="flex overflow-x-auto hide-scrollbar gap-2 w-full md:w-auto pb-1">
+                                    <button onClick={exportBackup} className="bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-xl font-bold text-xs flex items-center gap-1.5"><i className="fas fa-file-download"></i> Exportar</button>
+                                    <button onClick={() => setGlobalCollapse(p => ({ collapsed: !p.collapsed, count: p.count + 1 }))} className="bg-white border text-slate-600 px-3 py-1.5 rounded-xl font-bold text-xs"><i className="fas fa-compress"></i> Recolher Todos</button>
+                                    <button onClick={() => setIsTaskModalOpen(true)} className="bg-indigo-600 text-white px-4 py-1.5 rounded-xl font-bold text-xs flex items-center gap-1.5"><i className="fas fa-plus"></i> Novo</button>
+                                    <button onClick={() => signOut(auth)} className="bg-red-50 text-red-600 px-3 py-1.5 rounded-xl font-bold text-xs"><i className="fas fa-sign-out-alt"></i> Sair</button>
+                                </div>
+                            </header>
+
+                            <div className="flex overflow-x-auto hide-scrollbar gap-2 mb-1 pb-1 w-full">
+                                <StatCard label="Total" value={stats.total} borderColor="border-slate-200" />
+                                <StatCard label="Em Execução" value={stats.progress} borderColor="border-amber-400" textColor="text-amber-600" />
+                                <StatCard label="Pendente" value={stats.pending} borderColor="border-red-400" textColor="text-red-600" />
+                                <StatCard label="Finalizados" value={stats.completed} borderColor="border-green-500" textColor="text-green-600" />
+                                <div className="glass-card px-3 py-2 rounded-xl border-l-4 border-indigo-500 flex-1 min-w-[140px]">
+                                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Eficiência</p>
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-base font-black text-indigo-600">{stats.perc}%</span>
+                                        <div className="flex-1 progress-bar-container"><div className="progress-bar-fill bg-indigo-600" style={{width: `${stats.perc}%`}}></div></div>
+                                    </div>
+                                </div>
                             </div>
-                            <form onSubmit={handleLogin} className="space-y-5">
-                                <div className="space-y-2">
-                                    <label className="text-xs font-bold text-slate-400 uppercase ml-2">E-mail Corporativo</label>
-                                    <input type="email" required value={email} onChange={e => setEmail(e.target.value)} className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all" placeholder="nome@exemplo.com"/>
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-xs font-bold text-slate-400 uppercase ml-2">Chave de Acesso</label>
-                                    <input type="password" required value={password} onChange={e => setPassword(e.target.value)} className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all" placeholder="••••••••"/>
-                                </div>
-                                {loginError && <div className="bg-red-50 text-red-600 text-xs font-bold p-4 rounded-2xl text-center border border-red-100">{loginError}</div>}
-                                <button type="submit" disabled={isLoggingIn} className="w-full bg-indigo-600 text-white py-4 rounded-2xl font-black text-sm uppercase tracking-wider hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 disabled:opacity-50">
-                                    {isLoggingIn ? 'Autenticando...' : 'Entrar no Dashboard'}
-                                </button>
-                            </form>
                         </div>
                     </div>
-                );
-            }
 
-            return (
-                <div className="min-h-screen flex bg-slate-50">
-                    
-                    {/* Barra Lateral Otimizada */}
-                    <aside className="w-80 bg-white border-r border-slate-200 hidden lg:flex flex-col p-8 sticky top-0 h-screen">
-                        <div className="flex items-center gap-4 mb-10">
-                            <div className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-indigo-100">
-                                <i className="fas fa-cubes text-xl"></i>
-                            </div>
-                            <div>
-                                <h1 className="text-xl font-black tracking-tight">CloudProj</h1>
-                                <p className="text-xs text-slate-400 font-bold">Gerenciamento 2026</p>
-                            </div>
-                        </div>
-
-                        <div className="space-y-8 flex-1">
-                            <div>
-                                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Visão Geral</h3>
-                                <div className="relative h-48 mb-6">
-                                    <canvas ref={chartRef}></canvas>
-                                    <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                                        <span className="text-2xl font-black text-slate-800">{stats.perc}%</span>
-                                        <span className="text-[9px] font-bold text-slate-400 uppercase">Eficiência</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <nav className="space-y-2">
-                                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Filtros</h3>
-                                <button onClick={() => setHideCompleted(!hideCompleted)} className={`w-full flex items-center justify-between p-3 rounded-xl text-sm font-bold transition-all ${hideCompleted ? 'bg-indigo-50 text-indigo-700' : 'text-slate-500 hover:bg-slate-50'}`}>
-                                    <span className="flex items-center gap-3"><i className="fas fa-eye-slash"></i> Ocultar Finalizados</span>
-                                    {hideCompleted && <i className="fas fa-check-circle"></i>}
-                                </button>
-                                <button onClick={() => {}} className="w-full flex items-center justify-between p-3 rounded-xl text-sm font-bold text-slate-500 hover:bg-slate-50 transition-all">
-                                    <span className="flex items-center gap-3"><i className="fas fa-star"></i> Meus Projetos</span>
-                                </button>
-                            </nav>
-                        </div>
-
-                        <div className="mt-auto pt-8 border-t border-slate-100">
-                            <div className="flex items-center gap-3 p-2">
-                                <div className="w-10 h-10 bg-slate-200 rounded-full flex items-center justify-center text-slate-600 font-bold text-xs">
-                                    {user.email.substring(0, 2).toUpperCase()}
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                    <p className="text-xs font-bold text-slate-800 truncate">{user.email}</p>
-                                    <p className="text-[10px] text-slate-400 font-medium">Administrador</p>
-                                </div>
-                                <button onClick={handleLogout} className="text-slate-400 hover:text-red-500 p-2 transition-colors">
-                                    <i className="fas fa-sign-out-alt"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </aside>
-
-                    {/* Conteúdo Principal */}
-                    <main className="flex-1 p-4 md:p-10 max-w-6xl mx-auto w-full">
-                        
-                        <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10">
-                            <div>
-                                <h2 className="text-3xl font-black text-slate-900 tracking-tight">Meus Projetos</h2>
-                                <p className="text-slate-500 font-medium mt-1">Gerencie fluxos e entregas em tempo real.</p>
-                            </div>
-                            <div className="flex items-center gap-3 w-full md:w-auto">
-                                <div className="relative flex-1 md:w-64">
-                                    <i className="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
-                                    <input 
-                                        type="text" 
-                                        placeholder="Buscar projeto..." 
-                                        value={searchTerm}
-                                        onChange={e => setSearchTerm(e.target.value)}
-                                        className="w-full pl-10 pr-4 py-3 bg-white border border-slate-200 rounded-2xl text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                    <main className="max-w-7xl mx-auto px-4 md:px-8 py-4 flex-grow w-full">
+                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                            <div className="lg:col-span-8 space-y-6">
+                                {filteredProjects.map(p => (
+                                    <ProjectCard 
+                                        key={p.id} p={p} db={db} 
+                                        searchTerm={searchTerm} 
+                                        globalCollapse={globalCollapse}
+                                        onEdit={() => { setEditingId(p.id); setTaskData(p); setIsTaskModalOpen(true); }}
+                                        onDelete={() => deleteDoc(doc(db, DB_COLLECTION, p.id))}
                                     />
-                                </div>
-                                <button onClick={() => setIsTaskModalOpen(true)} className="btn-primary text-white px-6 py-3 rounded-2xl font-bold text-sm flex items-center gap-3 shadow-lg shadow-indigo-100">
-                                    <i className="fas fa-plus"></i> Novo
-                                </button>
+                                ))}
                             </div>
-                        </header>
-
-                        {/* Estatísticas Rápidas em Mobile */}
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8 lg:hidden">
-                            <QuickStat label="Total" value={stats.total} color="indigo" />
-                            <QuickStat label="Execução" value={stats.andamento} color="amber" />
-                            <QuickStat label="Concluidos" value={stats.concluido} color="green" />
-                            <QuickStat label="Eficiência" value={`${stats.perc}%`} color="blue" />
-                        </div>
-
-                        {/* Listagem de Projetos */}
-                        <div className="space-y-6">
-                            {filteredAndSortedProjects.map(p => (
-                                <ProjectCard 
-                                    key={p.id} p={p} 
-                                    onEdit={() => { setEditingId(p.id); setTaskData(p); setIsTaskModalOpen(true); }}
-                                    onDelete={deleteProject}
-                                    onStatus={updateStatus}
-                                    onMove={moveProject}
-                                    db={db}
-                                    appId={appIdentifier}
-                                    projects={projects}
-                                />
-                            ))}
-                            {filteredAndSortedProjects.length === 0 && (
-                                <div className="text-center py-20 bg-white rounded-[2.5rem] border border-dashed border-slate-200 text-slate-400">
-                                    <i className="fas fa-folder-open text-4xl mb-4 opacity-20"></i>
-                                    <p className="font-bold">Nenhum projeto encontrado</p>
+                            <div className="lg:col-span-4 space-y-6">
+                                <div className="glass-card p-6 rounded-3xl sticky top-[160px] shadow-sm">
+                                    <h2 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2"><i className="fas fa-chart-pie text-indigo-500"></i> Distribuição Atual</h2>
+                                    <div className="relative h-56 mb-8"><canvas ref={chartRef}></canvas></div>
                                 </div>
-                            )}
+                            </div>
                         </div>
                     </main>
+                    <footer className="py-12 text-center text-slate-400 text-xs font-bold opacity-50 italic">Wilson Costa - IDW - 2026</footer>
 
-                    {/* Modais Customizados */}
                     {isTaskModalOpen && (
                         <div className="fixed inset-0 z-50 modal-backdrop flex items-center justify-center p-4">
-                            <div className="bg-white rounded-[2.5rem] w-full max-w-2xl p-10 animate-in shadow-2xl overflow-y-auto max-h-[90vh]">
-                                <div className="flex justify-between items-center mb-8">
-                                    <h3 className="text-2xl font-black text-slate-900">{editingId ? 'Editar Projeto' : 'Novo Projeto'}</h3>
-                                    <button onClick={() => setIsTaskModalOpen(false)} className="text-slate-400 hover:text-slate-600"><i className="fas fa-times text-xl"></i></button>
-                                </div>
-                                <form onSubmit={saveProject} className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div className="space-y-5 col-span-full">
-                                        <div className="space-y-2">
-                                            <label className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">Nome do Projeto</label>
-                                            <input required type="text" value={taskData.title} onChange={e => setTaskData({...taskData, title: e.target.value})} className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Ex: Migração Cloud Azure"/>
-                                        </div>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">Início</label>
-                                        <input required type="date" value={taskData.start} onChange={e => setTaskData({...taskData, start: e.target.value})} className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm outline-none"/>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">Previsão Entrega</label>
-                                        <input required type="date" value={taskData.end} onChange={e => setTaskData({...taskData, end: e.target.value})} className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm outline-none"/>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">Prioridade</label>
-                                        <select value={taskData.priority} onChange={e => setTaskData({...taskData, priority: e.target.value})} className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold outline-none">
-                                            <option>Baixa</option><option>Média</option><option>Alta</option>
-                                        </select>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">Gestor Responsável</label>
-                                        <input type="text" value={taskData.owner} onChange={e => setTaskData({...taskData, owner: e.target.value})} className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm outline-none" placeholder="Nome do gestor"/>
-                                    </div>
-                                    <div className="col-span-full pt-6 flex gap-4">
-                                        <button type="button" onClick={() => setIsTaskModalOpen(false)} className="flex-1 py-4 text-slate-400 font-bold hover:bg-slate-50 rounded-2xl transition-all">Cancelar</button>
-                                        <button type="submit" className="flex-1 py-4 bg-indigo-600 text-white rounded-2xl font-black shadow-xl hover:bg-indigo-700 transition-all">Salvar Projeto</button>
+                            <div className="bg-white rounded-3xl w-full max-w-2xl p-8 animate-slide">
+                                <h3 className="text-2xl font-black mb-6">{editingId ? 'Editar Projeto' : 'Novo Projeto'}</h3>
+                                <form onSubmit={saveProject} className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
+                                    <input required placeholder="Título" value={taskData.title} onChange={e => setTaskData({...taskData, title: e.target.value})} className="w-full p-3 bg-slate-50 border rounded-xl outline-none" />
+                                    <select value={taskData.priority} onChange={e => setTaskData({...taskData, priority: e.target.value})} className="w-full p-3 bg-slate-50 border rounded-xl outline-none"><option>Baixa</option><option>Média</option><option>Alta</option></select>
+                                    <input type="date" value={taskData.start} onChange={e => setTaskData({...taskData, start: e.target.value})} className="p-3 bg-slate-50 border rounded-xl" />
+                                    <input type="date" value={taskData.end} onChange={e => setTaskData({...taskData, end: e.target.value})} className="p-3 bg-slate-50 border rounded-xl" />
+                                    <input placeholder="Dono" value={taskData.owner} onChange={e => setTaskData({...taskData, owner: e.target.value})} className="w-full p-3 bg-slate-50 border rounded-xl outline-none" />
+                                    <div className="col-span-full pt-4 flex gap-2">
+                                        <button type="button" onClick={() => setIsTaskModalOpen(false)} className="flex-1 py-3 font-bold text-slate-400">Cancelar</button>
+                                        <button type="submit" className="flex-1 py-3 bg-indigo-600 text-white rounded-xl font-bold">Salvar</button>
                                     </div>
                                 </form>
                             </div>
                         </div>
                     )}
-
                 </div>
             );
         }
 
-        function QuickStat({ label, value, color }) {
-            const colors = {
-                indigo: 'bg-indigo-50 text-indigo-600 border-indigo-100',
-                amber: 'bg-amber-50 text-amber-600 border-amber-100',
-                green: 'bg-green-50 text-green-600 border-green-100',
-                blue: 'bg-blue-50 text-blue-600 border-blue-100'
-            };
+        function StatCard({ label, value, borderColor, textColor = "text-slate-800" }) {
             return (
-                <div className={`p-4 rounded-3xl border ${colors[color]} flex flex-col items-center justify-center text-center shadow-sm`}>
-                    <span className="text-[10px] font-black uppercase tracking-tighter opacity-70">{label}</span>
-                    <span className="text-xl font-black mt-1">{value}</span>
+                <div className={`glass-card px-3 py-2 rounded-xl shadow-sm border-l-4 min-w-[110px] md:min-w-[130px] flex-1 ${borderColor}`}>
+                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">{label}</p>
+                    <h3 className={`text-base md:text-lg font-black ${textColor}`}>{value}</h3>
                 </div>
             );
         }
 
-        function ProjectCard({ p, onEdit, onDelete, onStatus, onMove, db, appId, projects }) {
-            const [expanded, setExpanded] = useState(false);
-            const [newNote, setNewNote] = useState('');
+        function ProjectCard({ p, db, searchTerm, globalCollapse, onEdit, onDelete }) {
+            const [isCollapsed, setIsCollapsed] = useState(p.status === 'Concluído');
+            const [newNote, setNewNote] = useState("");
             const [activeSubId, setActiveSubId] = useState(null);
 
-            const done = p.subtasks?.filter(s => s.completed).length || 0;
+            useEffect(() => { if (globalCollapse.count > 0 && p.status !== 'Concluído') setIsCollapsed(globalCollapse.collapsed); }, [globalCollapse.count]);
+
             const total = p.subtasks?.length || 0;
-            const progress = total > 0 ? Math.round((done / total) * 100) : (p.status === 'Concluído' ? 100 : 0);
+            const progress = total > 0 ? Math.round((p.subtasks.filter(s => s.completed).length / total) * 100) : (p.status === 'Concluído' ? 100 : 0);
 
             const toggleSub = async (subId) => {
                 const newSubs = p.subtasks.map(s => s.id === subId ? { ...s, completed: !s.completed } : s);
-                const allDone = newSubs.length > 0 && newSubs.every(s => s.completed);
-                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'projects', p.id), { 
-                    subtasks: newSubs,
-                    status: allDone ? 'Concluído' : (p.status === 'Concluído' ? 'Andamento' : p.status)
-                });
+                await updateDoc(doc(db, 'projects', p.id), { subtasks: newSubs });
             };
 
-            const addNote = async (subId) => {
+            const addHistoryNote = async (subId) => {
                 if (!newNote.trim()) return;
                 const time = new Date().toLocaleString('pt-PT', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
                 const newSubs = p.subtasks.map(s => s.id === subId ? { ...s, notes: [...(s.notes || []), { text: newNote, time }] } : s);
-                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'projects', p.id), { subtasks: newSubs });
-                setNewNote('');
-                setActiveSubId(null);
+                await updateDoc(doc(db, 'projects', p.id), { subtasks: newSubs });
+                setNewNote(""); setActiveSubId(null);
             };
 
-            const priorityColors = { 'Alta': 'bg-red-500 text-white', 'Média': 'bg-amber-500 text-white', 'Baixa': 'bg-slate-400 text-white' };
-
             return (
-                <div className="bg-white rounded-[2.5rem] p-8 border border-slate-200 project-card group">
-                    <div className="flex flex-col lg:flex-row justify-between gap-8">
-                        
-                        {/* Infos Principais */}
+                <div className={`glass-card rounded-3xl p-6 transition-all ${isCollapsed ? 'opacity-70 border-dashed bg-slate-50/50' : 'bg-white'}`}>
+                    <div className="flex flex-col lg:flex-row justify-between gap-6">
                         <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-3 mb-4">
-                                <span className={`status-pill status-${p.status}`}>{p.status === 'Andamento' ? 'Execução' : p.status}</span>
-                                <span className={`priority-badge ${priorityColors[p.priority]}`}>{p.priority}</span>
-                                <div className="flex gap-1 ml-auto lg:hidden">
-                                    <button onClick={() => onMove(p.id, -1)} className="p-1 text-slate-300 hover:text-indigo-600"><i className="fas fa-chevron-up"></i></button>
-                                    <button onClick={() => onMove(p.id, 1)} className="p-1 text-slate-300 hover:text-indigo-600"><i className="fas fa-chevron-down"></i></button>
-                                </div>
+                            <div className="flex items-center gap-3 mb-2">
+                                <span className={`status-pill status-${p.status}`}>{p.status === 'Andamento' ? 'Em Execução' : p.status}</span>
+                                <span className="text-[10px] font-black uppercase text-slate-400 bg-slate-100 px-2 py-1 rounded">Prio: {p.priority}</span>
                             </div>
-                            <h3 className="text-2xl font-black text-slate-800 truncate leading-tight mb-2">{p.title}</h3>
-                            <div className="flex flex-wrap items-center gap-4 text-xs font-bold text-slate-400 uppercase tracking-wider">
-                                <span className="flex items-center gap-2"><i className="far fa-calendar-alt text-indigo-400"></i> {formatDate(p.start)} - {formatDate(p.end)}</span>
-                                <span className="flex items-center gap-2"><i className="fas fa-user-circle text-indigo-400"></i> {p.owner || "Sem gestor"}</span>
+                            <h3 className="text-xl font-black text-slate-800 truncate"><HighlightedText text={p.title} term={searchTerm} /></h3>
+                            <p className="text-xs text-slate-500 mt-1 font-medium"><i className="far fa-calendar-alt text-indigo-400"></i> {formatDate(p.start)} — {formatDate(p.end)}</p>
+                        </div>
+                        <div className="flex flex-col justify-center bg-slate-50 p-4 rounded-2xl min-w-[280px] border border-slate-100 relative group">
+                            <button onClick={onEdit} className="absolute top-2 right-2 text-indigo-400 opacity-0 group-hover:opacity-100 p-2 hover:bg-white rounded-lg"><i className="fas fa-pencil text-[10px]"></i></button>
+                            <div className="space-y-1 text-xs text-slate-600">
+                                <div><span className="font-bold text-slate-400 uppercase text-[8px] w-12 inline-block">Dono:</span> {p.owner || "---"}</div>
+                                <div><span className="font-bold text-slate-400 uppercase text-[8px] w-12 inline-block">Empresa:</span> {p.company || "---"}</div>
                             </div>
                         </div>
-
-                        {/* Progress Circle & Ações */}
-                        <div className="flex items-center gap-8 justify-between lg:justify-end">
-                            <div className="text-right">
-                                <div className="text-[10px] font-black text-slate-400 uppercase mb-2 tracking-widest">Progresso</div>
-                                <div className="flex items-center gap-3">
-                                    <div className="w-40 h-2 bg-slate-100 rounded-full overflow-hidden">
-                                        <div className="h-full bg-indigo-600 rounded-full transition-all duration-700" style={{width: `${progress}%`}}></div>
-                                    </div>
-                                    <span className="text-sm font-black text-indigo-600 w-10">{progress}%</span>
-                                </div>
-                            </div>
-                            
-                            <div className="flex gap-2">
-                                <button onClick={() => setExpanded(!expanded)} className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${expanded ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200' : 'bg-slate-50 text-slate-400 hover:bg-slate-100'}`}>
-                                    <i className={`fas ${expanded ? 'fa-chevron-up' : 'fa-chevron-down'}`}></i>
-                                </button>
-                                <button onClick={onEdit} className="w-12 h-12 bg-slate-50 text-slate-400 rounded-2xl flex items-center justify-center hover:bg-indigo-50 hover:text-indigo-600 transition-all">
-                                    <i className="fas fa-edit"></i>
-                                </button>
-                                <button onClick={() => onDelete(p.id)} className="w-12 h-12 bg-red-50 text-red-300 rounded-2xl flex items-center justify-center hover:bg-red-500 hover:text-white transition-all">
-                                    <i className="fas fa-trash-alt"></i>
-                                </button>
-                            </div>
+                        <div className="flex gap-2">
+                            <button onClick={() => setIsCollapsed(!isCollapsed)} className="p-3 bg-slate-100 rounded-xl text-slate-500"><i className={`fas ${isCollapsed ? 'fa-plus' : 'fa-minus'}`}></i></button>
+                            <button onClick={onDelete} className="p-3 bg-red-50 rounded-xl text-red-500"><i className="fas fa-trash-alt"></i></button>
                         </div>
                     </div>
-
-                    {/* Área Expandida (Tarefas) */}
-                    {expanded && (
-                        <div className="mt-8 pt-8 border-t border-slate-100 animate-in">
-                            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-                                <div className="lg:col-span-4">
-                                    <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-6">Configurações Rápidas</h4>
-                                    <div className="space-y-4">
-                                        <div className="bg-slate-50 p-6 rounded-3xl border border-slate-100">
-                                            <label className="text-[10px] font-black text-slate-400 uppercase block mb-3">Status do Projeto</label>
-                                            <select value={p.status} onChange={(e) => onStatus(p.id, e.target.value)} className="w-full p-3 bg-white border border-slate-200 rounded-xl font-bold text-sm outline-none cursor-pointer">
-                                                <option value="Andamento">Em Execução</option>
-                                                <option value="Pendente">Pendente</option>
-                                                <option value="Planeamento">Planeamento</option>
-                                                <option value="Concluído">Finalizado</option>
-                                            </select>
-                                        </div>
-                                        <div className="flex gap-2">
-                                            <button onClick={() => onMove(p.id, -1)} className="flex-1 py-3 bg-slate-50 rounded-xl text-xs font-bold text-slate-500 hover:bg-indigo-50 hover:text-indigo-600 transition-all">Subir na Lista</button>
-                                            <button onClick={() => onMove(p.id, 1)} className="flex-1 py-3 bg-slate-50 rounded-xl text-xs font-bold text-slate-500 hover:bg-indigo-50 hover:text-indigo-600 transition-all">Baixar na Lista</button>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="lg:col-span-8">
-                                    <div className="flex justify-between items-center mb-6">
-                                        <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Fluxo de Atividades ({total})</h4>
-                                        <button className="text-[10px] font-black text-indigo-600 uppercase bg-indigo-50 px-3 py-1 rounded-lg">Add Tarefa</button>
-                                    </div>
-                                    
-                                    <div className="space-y-4">
-                                        {p.subtasks?.map(sub => (
-                                            <div key={sub.id} className="bg-slate-50/50 rounded-3xl p-6 border border-transparent hover:border-slate-200 transition-all">
-                                                <div className="flex items-center justify-between mb-4">
-                                                    <div className="flex items-center gap-4">
-                                                        <div onClick={() => toggleSub(sub.id)} className={`w-6 h-6 rounded-lg flex items-center justify-center cursor-pointer border-2 transition-all ${sub.completed ? 'bg-indigo-600 border-indigo-600 text-white' : 'border-slate-300 hover:border-indigo-400'}`}>
-                                                            {sub.completed && <i className="fas fa-check text-[10px]"></i>}
-                                                        </div>
-                                                        <span className={`font-bold text-sm ${sub.completed ? 'line-through text-slate-400' : 'text-slate-700'}`}>{sub.title}</span>
-                                                    </div>
-                                                    <button onClick={() => setActiveSubId(activeSubId === sub.id ? null : sub.id)} className="text-[10px] font-black text-indigo-500 bg-white border border-indigo-100 px-4 py-2 rounded-xl shadow-sm hover:bg-indigo-600 hover:text-white transition-all uppercase tracking-widest">
-                                                        {activeSubId === sub.id ? 'Cancelar' : 'Nova Nota'}
-                                                    </button>
-                                                </div>
-
-                                                {activeSubId === sub.id && (
-                                                    <div className="mt-4 mb-6 animate-in">
-                                                        <textarea 
-                                                            className="w-full p-4 bg-white border border-slate-200 rounded-2xl text-xs outline-none focus:ring-2 focus:ring-indigo-500/20" 
-                                                            placeholder="Relate a atualização..."
-                                                            value={newNote}
-                                                            onChange={e => setNewNote(e.target.value)}
-                                                            rows="2"
-                                                        />
-                                                        <div className="flex justify-end mt-2">
-                                                            <button onClick={() => addNote(sub.id)} className="bg-indigo-600 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase">Postar Registro</button>
-                                                        </div>
-                                                    </div>
-                                                )}
-
-                                                <div className="space-y-2 mt-4">
-                                                    {sub.notes?.map((n, idx) => (
-                                                        <div key={idx} className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm relative group/note">
-                                                            <p className="text-[11px] text-slate-600 italic leading-relaxed pr-8">"{n.text}"</p>
-                                                            <div className="flex justify-between items-center mt-3 pt-2 border-t border-slate-50">
-                                                                <span className="text-[8px] font-black text-slate-300 uppercase tracking-widest flex items-center gap-1">
-                                                                    <i className="far fa-clock"></i> {n.time}
-                                                                </span>
-                                                            </div>
-                                                        </div>
-                                                    ))}
-                                                </div>
+                    {!isCollapsed && (
+                        <div className="border-t mt-6 pt-6 animate-in space-y-4">
+                            <div className="max-w-[300px]">
+                                <div className="flex justify-between text-[10px] font-bold text-slate-400 mb-1 uppercase"><span>Progresso</span><span>{progress}%</span></div>
+                                <div className="progress-bar-container"><div className="progress-bar-fill bg-indigo-600" style={{width: `${progress}%`}}></div></div>
+                            </div>
+                            <div className="space-y-3">
+                                {p.subtasks?.map(sub => (
+                                    <div key={sub.id} className="bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-3">
+                                                <input type="checkbox" checked={sub.completed} onChange={() => toggleSub(sub.id)} className="w-5 h-5 rounded-lg text-indigo-600 cursor-pointer" />
+                                                <p className={`font-bold text-sm ${sub.completed ? 'line-through text-slate-400' : 'text-slate-700'}`}><HighlightedText text={sub.title} term={searchTerm} /></p>
                                             </div>
-                                        ))}
+                                            <button onClick={() => setActiveSubId(activeSubId === sub.id ? null : sub.id)} className="text-[10px] font-bold text-indigo-600 border border-indigo-100 px-3 py-1 rounded-lg">Nota</button>
+                                        </div>
+                                        {activeSubId === sub.id && (
+                                            <div className="mt-4 animate-slide">
+                                                <textarea className="note-input mb-2" value={newNote} onChange={e => setNewNote(e.target.value)} placeholder="Nova nota..."/>
+                                                <div className="flex justify-end"><button onClick={() => addHistoryNote(sub.id)} className="bg-indigo-600 text-white text-[10px] px-4 py-2 rounded-xl font-bold">Salvar</button></div>
+                                            </div>
+                                        )}
+                                        <div className="mt-2 space-y-2">
+                                            {sub.notes?.map((n, i) => (
+                                                <div key={i} className="bg-white p-2 rounded-xl border border-slate-100 text-[11px] text-slate-600 italic">
+                                                    "{n.text}" <span className="block text-[8px] mt-1 text-slate-300 uppercase not-italic">{n.time}</span>
+                                                </div>
+                                            ))}
+                                        </div>
                                     </div>
-                                </div>
+                                ))}
+                                <button onClick={() => {}} className="text-[10px] font-black text-indigo-600 uppercase border-2 border-dashed border-indigo-100 w-full py-3 rounded-2xl hover:bg-indigo-50 transition-all">+ Nova Tarefa Interna</button>
                             </div>
                         </div>
                     )}
@@ -678,11 +500,7 @@
             );
         }
 
-        function formatDate(s) {
-            if (!s) return '-';
-            const [y, m, d] = s.split('-');
-            return `${d}/${m}/${y}`;
-        }
+        function formatDate(s) { if (!s) return '-'; const [y, m, d] = s.split('-'); return `${d}/${m}/${y}`; }
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
