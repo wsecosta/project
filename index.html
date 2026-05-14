@@ -83,7 +83,7 @@
             border-radius: 9999px;
             padding: 4px 16px;
             display: flex;
-            flex-direction: row; /* Força horizontal */
+            flex-direction: row;
             align-items: center;
             gap: 12px;
             height: 36px;
@@ -134,7 +134,7 @@
             padding: 10px;
             border-radius: 12px;
             outline: none;
-            white-space: pre-wrap; /* Quebra de linha nas notas */
+            white-space: pre-wrap;
         }
 
         .animate-slide { animation: slideUp 0.3s ease-out; }
@@ -273,6 +273,8 @@
                 setIsTaskModalOpen(false); setEditingId(null);
             };
 
+            const deleteProject = async (id) => { if (confirm("Eliminar permanentemente?")) await deleteDoc(doc(db, DB_COLLECTION, id)); };
+
             const updateStatus = async (id, newStatus) => await updateDoc(doc(db, DB_COLLECTION, id), { status: newStatus });
 
             const toggleSub = async (tId, sId) => {
@@ -304,6 +306,36 @@
                 await updateDoc(doc(db, DB_COLLECTION, projectId), { subtasks: newSubtasks });
             };
 
+            const editHistoryNote = async (projectId, subtaskId, noteIndex, newText) => {
+                const project = projects.find(p => p.id === projectId);
+                const newSubtasks = project.subtasks.map(sub => {
+                    if (sub.id === subtaskId) {
+                        const newNotes = [...(sub.notes || [])];
+                        newNotes[noteIndex].text = newText;
+                        newNotes[noteIndex].lastEdit = new Date().toLocaleString('pt-PT', { hour:'2-digit', minute:'2-digit' });
+                        return { ...sub, notes: newNotes };
+                    }
+                    return sub;
+                });
+                await updateDoc(doc(db, DB_COLLECTION, projectId), { subtasks: newSubtasks });
+            };
+
+            const deleteHistoryNote = async (projectId, subtaskId, noteIndex) => {
+                if (!confirm("Eliminar esta nota?")) return;
+                const project = projects.find(p => p.id === projectId);
+                const newSubtasks = project.subtasks.map(sub => {
+                    if (sub.id === subtaskId) {
+                        const newNotes = [...(sub.notes || [])];
+                        newNotes.splice(noteIndex, 1);
+                        const completedCount = newNotes.filter(n => n.completed).length;
+                        const newProgress = newNotes.length > 0 ? Math.round((completedCount / newNotes.length) * 100) : 0;
+                        return { ...sub, notes: newNotes, progress: newProgress, completed: newProgress === 100 };
+                    }
+                    return sub;
+                });
+                await updateDoc(doc(db, DB_COLLECTION, projectId), { subtasks: newSubtasks });
+            };
+
             const toggleHistoryNote = async (projectId, subtaskId, noteIndex) => {
                 const project = projects.find(p => p.id === projectId);
                 const newSubtasks = project.subtasks.map(sub => {
@@ -328,6 +360,13 @@
                 setIsSubtaskModalOpen(false);
             };
 
+            const deleteSubtask = async (projectId, subtaskId) => {
+                if (!confirm("Eliminar esta atividade?")) return;
+                const project = projects.find(p => p.id === projectId);
+                const newSubtasks = project.subtasks.filter(s => s.id !== subtaskId);
+                await updateDoc(doc(db, DB_COLLECTION, projectId), { subtasks: newSubtasks });
+            };
+
             const filteredProjects = projects.filter(p => !searchTerm || p.title.toLowerCase().includes(searchTerm.toLowerCase()));
             const stats = {
                 progress: projects.filter(p => p.status === 'Andamento').length,
@@ -336,7 +375,7 @@
                 planning: projects.filter(p => p.status === 'Planeamento').length
             };
 
-            if (authLoading) return <div className="h-screen flex items-center justify-center bg-slate-900 text-white uppercase text-xs font-black">SECURITY SYSTEM...</div>;
+            if (authLoading) return <div className="h-screen flex items-center justify-center bg-slate-900 text-white uppercase text-xs font-black tracking-widest">SECURITY SYSTEM...</div>;
 
             if (!user) {
                 return (
@@ -355,6 +394,7 @@
 
             return (
                 <div className="bg-slate-50 min-h-screen flex flex-col">
+                    {}
                     <div className={`sticky-header-container px-4 md:px-10 ${isScrolled ? 'scrolled-header' : ''}`}>
                         <div className="max-w-[1700px] mx-auto flex items-center justify-between">
                             <div className="logo-section-print flex items-center gap-2">
@@ -390,6 +430,7 @@
                         </div>
                     </div>
 
+                    {}
                     <main className="max-w-[1700px] mx-auto px-4 md:px-10 py-8 grid grid-cols-1 lg:grid-cols-12 gap-8 w-full flex-grow">
                         <div className="lg:col-span-8 space-y-6">
                             {filteredProjects.map(p => (
@@ -399,10 +440,13 @@
                                     globalCollapse={globalCollapse} 
                                     searchTerm={searchTerm}
                                     onEdit={() => { setEditingId(p.id); setTaskData(p); setIsTaskModalOpen(true); }}
-                                    onDelete={async () => { if (confirm("Eliminar?")) await deleteDoc(doc(db, DB_COLLECTION, p.id)); }}
+                                    onDelete={() => deleteProject(p.id)}
                                     onStatus={(s) => updateStatus(p.id, s)}
                                     onToggleSub={(sId) => toggleSub(p.id, sId)}
+                                    onDeleteSubtask={(sId) => deleteSubtask(p.id, sId)}
                                     onToggleHistoryNote={(sId, idx) => toggleHistoryNote(p.id, sId, idx)}
+                                    onEditHistoryNote={(sId, idx, txt) => editHistoryNote(p.id, sId, idx, txt)}
+                                    onDeleteHistoryNote={(sId, idx) => deleteHistoryNote(p.id, sId, idx)}
                                     onAddHistoryNote={(sId, txt) => addHistoryNote(p.id, sId, txt)}
                                     onAddSub={() => { setSubtaskData({ parentId: p.id, title: '', note: '' }); setIsSubtaskModalOpen(true); }}
                                 />
@@ -424,10 +468,10 @@
                         </div>
                     </main>
 
-                    {/* Janelas de Edição Otimizadas */}
+                    {}
                     {isTaskModalOpen && (
                         <div className="fixed inset-0 z-50 modal-backdrop flex items-center justify-center p-4">
-                            <div className="bg-white rounded-[2rem] w-full max-w-xl modal-compact-container animate-slide shadow-2xl border border-slate-100">
+                            <div className="bg-white rounded-[2rem] w-full max-w-xl modal-compact-container animate-slide shadow-2xl border border-slate-100 flex flex-col overflow-y-auto max-h-[90vh]">
                                 <div className="flex justify-between items-center mb-2">
                                     <h3 className="text-xl font-black text-slate-900">{editingId ? 'Editar Registo' : 'Novo Projeto'}</h3>
                                     <button onClick={() => setIsTaskModalOpen(false)} className="text-slate-400 hover:text-rose-500"><i className="fas fa-times"></i></button>
@@ -450,8 +494,16 @@
                                         <select value={taskData.priority} onChange={e => setTaskData({...taskData, priority: e.target.value})} className="w-full bg-slate-50 border outline-none font-bold"><option>Baixa</option><option>Média</option><option>Alta</option></select>
                                     </div>
                                     <div className="space-y-1">
-                                        <label className="text-[9px] font-black text-slate-400 uppercase ml-2">Responsável</label>
+                                        <label className="text-[9px] font-black text-slate-400 uppercase ml-2">Dono / Responsável</label>
                                         <input type="text" value={taskData.owner} onChange={e => setTaskData({...taskData, owner: e.target.value})} className="w-full bg-slate-50 border outline-none font-bold"/>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-[9px] font-black text-slate-400 uppercase ml-2">Equipa Alocada</label>
+                                        <input type="text" value={taskData.team} onChange={e => setTaskData({...taskData, team: e.target.value})} className="w-full bg-slate-50 border outline-none font-bold"/>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-[9px] font-black text-slate-400 uppercase ml-2">Empresa / Cliente</label>
+                                        <input type="text" value={taskData.company} onChange={e => setTaskData({...taskData, company: e.target.value})} className="w-full bg-slate-50 border outline-none font-bold"/>
                                     </div>
                                     <div className="col-span-full pt-4 flex gap-3">
                                         <button type="button" onClick={() => setIsTaskModalOpen(false)} className="flex-1 py-3 text-slate-400 font-black uppercase text-[10px]">Sair</button>
@@ -481,10 +533,11 @@
             );
         }
 
-        function ProjectCard({ p, isCompact, searchTerm, onEdit, onDelete, onStatus, onToggleSub, onAddSub, onToggleHistoryNote, onAddHistoryNote }) {
+        function ProjectCard({ p, isCompact, searchTerm, onEdit, onDelete, onStatus, onToggleSub, onDeleteSubtask, onAddSub, onToggleHistoryNote, onEditHistoryNote, onDeleteHistoryNote, onAddHistoryNote }) {
             const [isCollapsed, setIsCollapsed] = useState(isCompact);
             const [newNote, setNewNote] = useState("");
             const [activeNoteSubId, setActiveNoteSubId] = useState(null);
+            const [editingNote, setEditingNote] = useState({ subId: null, idx: null, text: '' });
 
             const total = p.subtasks?.length || 0;
             const sumProgress = p.subtasks?.reduce((acc, sub) => acc + (sub.progress ?? (sub.completed ? 100 : 0)), 0) || 0;
@@ -505,7 +558,7 @@
                                 <i className="far fa-calendar-alt text-indigo-500"></i> {formatDate(p.start)} — <span className="text-rose-500">{formatDate(p.end)}</span>
                             </p>
                             
-                            {/* Progresso visível quando fechado */}
+                            {}
                             {isCollapsed && (
                                 <div className="mt-4 w-full max-w-xs animate-slide">
                                     <div className="flex justify-between text-[8px] font-black text-slate-400 uppercase mb-1"><span>{progress}% Concluído</span></div>
@@ -518,6 +571,7 @@
                             <div className="space-y-1.5 text-[10px] flex-1">
                                 <div className="flex items-center gap-2 font-bold"><i className="fas fa-user-tie text-indigo-400 w-4"></i> <span className="text-slate-600 truncate">{p.owner}</span></div>
                                 <div className="flex items-center gap-2 font-bold"><i className="fas fa-users text-indigo-400 w-4"></i> <span className="text-slate-600 truncate">{p.team}</span></div>
+                                <div className="flex items-center gap-2 font-bold"><i className="fas fa-building text-indigo-400 w-4"></i> <span className="text-slate-600 truncate">{p.company}</span></div>
                             </div>
                             <div className="flex flex-col gap-1.5">
                                 <button onClick={() => setIsCollapsed(!isCollapsed)} className="w-8 h-8 rounded-lg bg-white shadow-sm border flex items-center justify-center text-slate-400 hover:text-indigo-600"><i className={`fas fa-angle-${isCollapsed ? 'down' : 'up'}`}></i></button>
@@ -537,6 +591,7 @@
                                 <button onClick={onAddSub} className="h-9 px-5 bg-indigo-600 text-white rounded-xl font-black uppercase text-[10px] tracking-widest shadow-lg">Nova Atividade</button>
                             </div>
 
+                            {}
                             <div className="space-y-4">
                                 {p.subtasks?.map(sub => (
                                     <div key={sub.id} className="bg-slate-50/50 p-5 rounded-2xl border-l-4 border-l-indigo-400 group/sub">
@@ -548,7 +603,10 @@
                                                     <span className="text-[9px] font-black text-indigo-400 uppercase">{sub.progress ?? (sub.completed ? 100 : 0)}% COMPLETADO</span>
                                                 </div>
                                             </div>
-                                            <button onClick={() => setActiveNoteSubId(activeNoteSubId === sub.id ? null : sub.id)} className="text-[9px] font-black px-4 py-2 rounded-lg border bg-white text-indigo-600 uppercase">Nota</button>
+                                            <div className="flex items-center gap-2">
+                                                <button onClick={() => setActiveNoteSubId(activeNoteSubId === sub.id ? null : sub.id)} className="text-[9px] font-black px-4 py-2 rounded-lg border bg-white text-indigo-600 uppercase">Nota</button>
+                                                <button onClick={() => onDeleteSubtask(sub.id)} className="text-rose-300 hover:text-rose-500"><i className="fas fa-trash"></i></button>
+                                            </div>
                                         </div>
 
                                         {activeNoteSubId === sub.id && (
@@ -565,10 +623,26 @@
                                                         <div className="flex items-start gap-4">
                                                             <input type="checkbox" checked={n.completed} onChange={() => onToggleHistoryNote(sub.id, idx)} className="mt-1 w-4 h-4 rounded border-slate-200 text-indigo-500 cursor-pointer"/>
                                                             <div className="flex-1">
-                                                                <p className={`text-xs font-medium leading-relaxed whitespace-pre-wrap ${n.completed ? 'line-through opacity-30 text-slate-400' : 'text-slate-600'}`}>{n.text}</p>
-                                                                <div className="flex justify-between items-center mt-2 pt-2 border-t text-[8px] text-slate-300 font-bold uppercase tracking-widest">
-                                                                    <span><i className="far fa-clock"></i> {n.time}</span>
-                                                                </div>
+                                                                {editingNote.subId === sub.id && editingNote.idx === idx ? (
+                                                                    <div className="space-y-2">
+                                                                        <textarea className="note-input w-full" value={editingNote.text} onChange={e => setEditingNote({...editingNote, text: e.target.value})} rows="2"/>
+                                                                        <div className="flex justify-end gap-2">
+                                                                            <button onClick={() => setEditingNote({subId:null, idx:null, text:''})} className="text-[8px] font-black uppercase text-slate-400">Descartar</button>
+                                                                            <button onClick={() => { onEditHistoryNote(sub.id, idx, editingNote.text); setEditingNote({subId:null, idx:null, text:''}); }} className="bg-indigo-600 text-white px-2 py-1 rounded text-[8px] font-black uppercase">Gravar</button>
+                                                                        </div>
+                                                                    </div>
+                                                                ) : (
+                                                                    <>
+                                                                        <p className={`text-xs font-medium leading-relaxed whitespace-pre-wrap ${n.completed ? 'line-through opacity-30 text-slate-400' : 'text-slate-600'}`}>{n.text}</p>
+                                                                        <div className="flex justify-between items-center mt-2 pt-2 border-t text-[8px] text-slate-300 font-bold uppercase tracking-widest">
+                                                                            <span><i className="far fa-clock"></i> {n.time} {n.lastEdit && `• EDITADO ${n.lastEdit}`}</span>
+                                                                            <div className="opacity-0 group-hover/note:opacity-100 transition-all flex gap-3">
+                                                                                <button onClick={() => setEditingNote({subId: sub.id, idx, text: n.text})} className="text-indigo-400 hover:text-indigo-600"><i className="fas fa-pen"></i></button>
+                                                                                <button onClick={() => onDeleteHistoryNote(sub.id, idx)} className="text-rose-300 hover:text-rose-500"><i className="fas fa-times"></i></button>
+                                                                            </div>
+                                                                        </div>
+                                                                    </>
+                                                                )}
                                                             </div>
                                                         </div>
                                                     </div>
