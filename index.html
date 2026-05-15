@@ -613,11 +613,11 @@
                                     <button onClick={triggerImport} className="bg-blue-50 border border-blue-200 text-blue-700 px-3 py-1.5 rounded-xl font-bold hover:bg-blue-100 text-xs flex items-center gap-1.5 flex-shrink-0"><i className="fas fa-file-upload"></i> Importar</button>
                                     
                                     <button onClick={() => setGlobalCollapse(prev => ({ collapsed: !prev.collapsed, count: prev.count + 1 }))} className="bg-white border border-slate-200 text-slate-600 px-3 py-1.5 rounded-xl font-bold hover:bg-slate-50 text-xs flex items-center gap-1.5 flex-shrink-0">
-                                        <i className={globalCollapse.collapsed ? 'fas fa-expand text-indigo-500' : 'fas fa-compress'}></i> {globalCollapse.collapsed ? 'Expandir Ativos' : 'Minimizar Ativos'}
+                                        <i className={globalCollapse.collapsed ? 'fas fa-expand text-indigo-500' : 'fas fa-compress'}></i> {globalCollapse.collapsed ? 'Exp Ativos' : 'Min Ativos'}
                                     </button>
                                     
                                     <button onClick={() => setHideCompleted(!hideCompleted)} className="bg-white border border-slate-200 text-slate-600 px-3 py-1.5 rounded-xl font-bold hover:bg-slate-50 text-xs flex items-center gap-1.5 flex-shrink-0">
-                                        <i className={hideCompleted ? 'fas fa-expand text-indigo-500' : 'fas fa-compress'}></i> {hideCompleted ? 'Expandir Finalizados' : 'Minimizar Finalizados'}
+                                        <i className={hideCompleted ? 'fas fa-expand text-indigo-500' : 'fas fa-compress'}></i> {hideCompleted ? 'Exp Finalizados' : 'Min Finalizados'}
                                     </button>
                                     
                                     <button onClick={() => setIsTaskModalOpen(true)} className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-1.5 rounded-xl font-bold shadow-sm text-xs flex items-center gap-1.5 flex-shrink-0"><i className="fas fa-plus"></i> Novo Projeto</button>
