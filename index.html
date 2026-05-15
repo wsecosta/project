@@ -325,7 +325,7 @@
                 try {
                     const dataStr = JSON.stringify(projects, null, 2);
                     const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
-                    const exportFileDefaultName = `backup_projetos__${new Date().toISOString().split('T')[0]}.json`;
+                    const exportFileDefaultName = `backup___${new Date().toISOString().split('T')[0]}.json`;
                     const linkElement = document.createElement('a');
                     linkElement.setAttribute('href', dataUri);
                     linkElement.setAttribute('download', exportFileDefaultName);
@@ -343,7 +343,7 @@
                     try {
                         const importedData = JSON.parse(event.target.result);
                         if (!Array.isArray(importedData)) throw new Error("Formato incorreto.");
-                        if (!window.confirm(`Vai importar ${importedData.length} projetos. Confirma?`)) {
+                        if (!window.confirm(`Vai importar ${importedData.length} . Confirma?`)) {
                             e.target.value = null;
                             return;
                         }
@@ -355,7 +355,7 @@
                                 count++;
                             } catch (err) { console.error("Erro importação:", err); }
                         }
-                        alert(`Concluído! ${count} projetos importados.`);
+                        alert(`Concluído! ${count}  importados.`);
                     } catch (error) {
                         console.error("Erro backup:", error);
                         alert("Erro ao ler o ficheiro.");
@@ -575,7 +575,7 @@
                             <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
                                 
                                 {/* AQUI O NOVO LOGOTIPO CENTRALIZADO E ALINHADO À ESQUERDA DO TÍTULO */}
-                                <div className="flex items-center gap-3 w-full md:w-auto">
+                                <div className="flex items-center gap-6 w-full md:w-auto">
                                     <img src="Logo+IDW.png" alt="IDW Logo" className="h-8 md:h-10 w-auto object-contain" />
                                     <div className="flex flex-col">
                                        <h1 className="text-xl md:text-2xl font-['Montserrat'] font-black text-slate-600 tracking-wide whitespace-nowrap">  
