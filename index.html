@@ -67,22 +67,6 @@
             transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        .sticky-header-container {
-            position: sticky;
-            top: 0;
-            z-index: 40;
-            background-color: rgba(203, 213, 225, 0.95);
-            backdrop-filter: blur(12px);
-            padding-top: 0.75rem; 
-            padding-bottom: 0.5rem; 
-            border-bottom: 1px solid transparent;
-        }
-
-        .scrolled-header {
-            border-bottom-color: #e2e8f0;
-            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05);
-        }
-
         .modal-backdrop {
             background: rgba(15, 23, 42, 0.6);
             backdrop-filter: blur(4px);
@@ -166,7 +150,6 @@
 
         function HighlightedText({ text, term }) {
             if (!term.trim() || !text) return <span>{text}</span>;
-            
             const parts = text.split(new RegExp(`(${term})`, 'gi'));
             return (
                 <span>
@@ -231,16 +214,13 @@
             const filteredProjects = useMemo(() => {
                 if (!searchTerm.trim()) return sortedProjects;
                 const term = searchTerm.toLowerCase();
-
                 return sortedProjects.filter(p => {
                     const projectMatch = 
                         p.title.toLowerCase().includes(term) ||
                         (p.owner && p.owner.toLowerCase().includes(term)) ||
                         (p.team && p.team.toLowerCase().includes(term)) ||
                         (p.company && p.company.toLowerCase().includes(term));
-                    
                     if (projectMatch) return true;
-
                     if (p.subtasks && Array.isArray(p.subtasks)) {
                         return p.subtasks.some(sub => {
                             if (sub.title.toLowerCase().includes(term)) return true;
@@ -580,7 +560,6 @@
                 );
             }
 
-            // O return principal agora inclui o design com as alterações que queria colar, devidamente estruturadas!
             return (
                 <div className="bg-gradient-to-b from-slate-800 to-slate-200 min-h-screen text-slate-800 flex flex-col">
                     <style>
@@ -590,15 +569,16 @@
                         `}
                     </style>
 
-                    <div className={`sticky top-0 w-full bg-slate-200 px-4 md:px-8 transition-all duration-300 z-50 ${isScrolled ? 'shadow-md' : ''}`}>
-                        <div className="max-w-7xl mx-auto">
-                            <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 py-4">
-                                
+                    {/* STICKY HEADER - MODIFICADO PARA INCLUIR STATCARDS */}
+                    <div className={`sticky top-0 w-full bg-slate-200 px-4 md:px-8 transition-all duration-300 z-50 ${isScrolled ? 'shadow-lg border-b border-slate-300' : ''}`}>
+                        <div className="max-w-7xl mx-auto py-2">
+                            {/* LINHA 1: BRAND + SEARCH + ACTIONS */}
+                            <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 py-2">
                                 <div className="flex flex-col w-full md:w-auto">
-                                    <h1 className="text-2xl md:text-3xl font-serif text-slate-900 tracking-wide whitespace-nowrap">  
+                                    <h1 className="text-xl md:text-2xl font-serif text-slate-900 tracking-wide whitespace-nowrap">  
                                         <span className="text-blue-600 font-black mr-2">IDW</span> Dashboard
                                     </h1>
-                                    <p className="text-slate-500 font-medium text-xs md:text-sm whitespace-nowrap">
+                                    <p className="text-slate-500 font-medium text-[10px] md:text-xs whitespace-nowrap">
                                         Gestão 2026 • <span className="text-indigo-600 font-bold">{user?.email}</span>
                                     </p>
                                 </div>
@@ -614,46 +594,50 @@
                                     />
                                 </div>
                                 
-                                <div className="flex overflow-x-auto hide-scrollbar gap-2 w-full md:w-auto pb-1">
-                                    <button onClick={exportBackup} className="bg-emerald-50 border border-emerald-200 text-emerald-700 px-3 py-1.5 rounded-xl font-bold hover:bg-emerald-100 text-xs flex items-center gap-1.5 flex-shrink-0"><i className="fas fa-file-download"></i> Exportar</button>
+                                <div className="flex overflow-x-auto hide-scrollbar gap-2 w-full md:w-auto">
+                                    <button onClick={exportBackup} className="bg-emerald-50 border border-emerald-200 text-emerald-700 px-3 py-1.5 rounded-xl font-bold hover:bg-emerald-100 text-[10px] flex items-center gap-1.5 flex-shrink-0"><i className="fas fa-file-download"></i> Exportar</button>
                                     <input type="file" ref={fileInputRef} onChange={importBackup} accept=".json" style={{ display: 'none' }} />
-                                    <button onClick={triggerImport} className="bg-blue-50 border border-blue-200 text-blue-700 px-3 py-1.5 rounded-xl font-bold hover:bg-blue-100 text-xs flex items-center gap-1.5 flex-shrink-0"><i className="fas fa-file-upload"></i> Importar</button>
-                                    
-                                    <button onClick={() => setGlobalCollapse(prev => ({ collapsed: !prev.collapsed, count: prev.count + 1 }))} className="bg-white border border-slate-200 text-slate-600 px-3 py-1.5 rounded-xl font-bold hover:bg-slate-50 text-xs flex items-center gap-1.5 flex-shrink-0">
-                                        <i className={globalCollapse.collapsed ? 'fas fa-expand text-indigo-500' : 'fas fa-compress'}></i> {globalCollapse.collapsed ? 'Exp Ativos' : 'Min Ativos'}
-                                    </button>
-                                    
-                                    <button onClick={() => setHideCompleted(!hideCompleted)} className="bg-white border border-slate-200 text-slate-600 px-3 py-1.5 rounded-xl font-bold hover:bg-slate-50 text-xs flex items-center gap-1.5 flex-shrink-0">
-                                        <i className={hideCompleted ? 'fas fa-expand text-indigo-500' : 'fas fa-compress'}></i> {hideCompleted ? 'Exp Finalizados' : 'Min Finalizados'}
-                                    </button>
-                                    
-                                    <button onClick={() => setIsTaskModalOpen(true)} className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-1.5 rounded-xl font-bold shadow-sm text-xs flex items-center gap-1.5 flex-shrink-0"><i className="fas fa-plus"></i> Novo Projeto</button>
-                                    <button onClick={handleLogout} className="bg-red-50 text-red-600 px-3 py-1.5 rounded-xl font-bold hover:bg-red-600 hover:text-white text-xs flex items-center gap-1.5 flex-shrink-0"><i className="fas fa-sign-out-alt"></i> Sair</button>
+                                    <button onClick={triggerImport} className="bg-blue-50 border border-blue-200 text-blue-700 px-3 py-1.5 rounded-xl font-bold hover:bg-blue-100 text-[10px] flex items-center gap-1.5 flex-shrink-0"><i className="fas fa-file-upload"></i> Importar</button>
+                                    <button onClick={() => setIsTaskModalOpen(true)} className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-1.5 rounded-xl font-bold shadow-sm text-[10px] flex items-center gap-1.5 flex-shrink-0"><i className="fas fa-plus"></i> Novo Projeto</button>
+                                    <button onClick={handleLogout} className="bg-red-50 text-red-600 px-3 py-1.5 rounded-xl font-bold hover:bg-red-600 hover:text-white text-[10px] flex items-center gap-1.5 flex-shrink-0"><i className="fas fa-sign-out-alt"></i> Sair</button>
                                 </div>
                             </header>
+
+                            {/* LINHA 2: STATCARDS FIXOS */}
+                            <div className="flex overflow-x-auto hide-scrollbar gap-2 py-2 mt-1 w-full border-t border-slate-300/30">
+                                <StatCard label="Total" value={stats.total} borderColor="border-slate-400" />
+                                <StatCard label="Em Execução" value={stats.progress} borderColor="border-amber-400" textColor="text-amber-600" />
+                                <StatCard label="Pendente" value={stats.pending} borderColor="border-red-400" textColor="text-red-600" />
+                                <StatCard label="Planeamento" value={stats.planning} borderColor="border-sky-400" textColor="text-sky-600" />
+                                <StatCard label="Finalizados" value={stats.completed} borderColor="border-green-500" textColor="text-green-600" />
+                                
+                                <div className="glass-card px-3 py-1.5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between gap-3 flex-shrink-0 min-w-max lg:flex-1 hover:border-slate-300 transition-all cursor-default bg-white/80">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-2 h-2 rounded-full bg-indigo-500"></div>
+                                        <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Eficiência</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-12 md:w-16 progress-bar-container h-1.5"><div className="progress-bar-fill bg-indigo-600" style={{width: `${stats.perc}%`}}></div></div>
+                                        <span className="text-[10px] font-black bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded-lg">{stats.perc}%</span>
+                                    </div>
+                                </div>
+
+                                {/* BOTÕES DE CONTROLE ADICIONAIS QUE ESTAVAM NO HEADER */}
+                                <div className="flex gap-2 ml-auto">
+                                    <button onClick={() => setGlobalCollapse(prev => ({ collapsed: !prev.collapsed, count: prev.count + 1 }))} className="bg-white border border-slate-200 text-slate-600 px-3 py-1.5 rounded-xl font-bold hover:bg-slate-50 text-[9px] flex items-center gap-1.5 flex-shrink-0">
+                                        <i className={globalCollapse.collapsed ? 'fas fa-expand text-indigo-500' : 'fas fa-compress'}></i> {globalCollapse.collapsed ? 'Exp Ativos' : 'Min Ativos'}
+                                    </button>
+                                    <button onClick={() => setHideCompleted(!hideCompleted)} className="bg-white border border-slate-200 text-slate-600 px-3 py-1.5 rounded-xl font-bold hover:bg-slate-50 text-[9px] flex items-center gap-1.5 flex-shrink-0">
+                                        <i className={hideCompleted ? 'fas fa-expand text-indigo-500' : 'fas fa-compress'}></i> {hideCompleted ? 'Exp Finalizados' : 'Min Finalizados'}
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
                     <div className="flex-1 overflow-auto p-4 md:p-8 max-w-7xl mx-auto w-full">
-                        <div className="flex overflow-x-auto hide-scrollbar gap-2 mb-6 pb-1 w-full">
-                            <StatCard label="Total" value={stats.total} borderColor="border-slate-200" />
-                            <StatCard label="Em Execução" value={stats.progress} borderColor="border-amber-400" textColor="text-amber-600" />
-                            <StatCard label="Pendente" value={stats.pending} borderColor="border-red-400" textColor="text-red-600" />
-                            <StatCard label="Planeamento" value={stats.planning} borderColor="border-sky-400" textColor="text-sky-600" />
-                            <StatCard label="Finalizados" value={stats.completed} borderColor="border-green-500" textColor="text-green-600" />
-                            
-                            <div className="glass-card px-3 py-1.5 md:px-4 md:py-2 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between gap-3 flex-shrink-0 min-w-max lg:flex-1 hover:border-slate-300 transition-all cursor-default">
-                                <div className="flex items-center gap-2">
-                                    <div className="w-2 h-2 rounded-full bg-indigo-500"></div>
-                                    <span className="text-[10px] md:text-[11px] font-bold text-slate-500 uppercase tracking-wider">Eficiência</span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <div className="w-12 md:w-16 progress-bar-container h-1.5"><div className="progress-bar-fill bg-indigo-600" style={{width: `${stats.perc}%`}}></div></div>
-                                    <span className="text-xs md:text-sm font-black bg-indigo-50 text-indigo-600 px-2.5 py-0.5 rounded-lg">{stats.perc}%</span>
-                                </div>
-                            </div>
-                        </div>
-
+                        {/* O BLOCO DE STATCARDS QUE ESTAVA AQUI FOI MOVIDO PARA O HEADER FIXO ACIMA */}
+                        
                         <main className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                             <div className="lg:col-span-8 space-y-6">
                                 {filteredProjects.map(p => (
@@ -682,7 +666,7 @@
                                 )}
                             </div>
                             <div className="lg:col-span-4 space-y-6">
-                                <div className="glass-card p-6 rounded-3xl sticky top-[160px] shadow-sm">
+                                <div className="glass-card p-6 rounded-3xl sticky top-[180px] shadow-sm">
                                     <h2 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2"><i className="fas fa-chart-pie text-indigo-500"></i> Distribuição Atual</h2>
                                     <div className="relative h-56 mb-8"><canvas ref={chartRef}></canvas></div>
                                     <div className="mt-8 pt-6 border-t border-slate-100">
@@ -706,6 +690,7 @@
                         <footer className="py-12 text-center text-slate-400 text-xs font-bold opacity-50 tracking-widest italic">By Wilson Costa - IDW - 2026</footer>
                     </div>
 
+                    {/* MODALS PRESERVADOS */}
                     {isTaskModalOpen && (
                         <div className="fixed inset-0 z-50 modal-backdrop flex items-center justify-center p-4">
                             <div className="bg-white rounded-3xl w-full max-w-2xl p-8 animate-slide overflow-y-auto max-h-[90vh] shadow-2xl">
@@ -755,12 +740,12 @@
         function StatCard({ label, value, borderColor, textColor = "text-slate-800" }) {
             const dotColor = borderColor === 'border-slate-200' ? 'bg-slate-400' : borderColor.replace('border-', 'bg-');
             return (
-                <div className="glass-card px-3 py-1.5 md:px-4 md:py-2 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between gap-3 flex-shrink-0 min-w-max lg:flex-1 hover:border-slate-300 transition-all cursor-default">
+                <div className="glass-card px-3 py-1.5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between gap-3 flex-shrink-0 min-w-max lg:flex-1 hover:border-slate-300 transition-all cursor-default bg-white/80">
                     <div className="flex items-center gap-2">
                         <div className={`w-2 h-2 rounded-full ${dotColor}`}></div>
-                        <span className="text-[10px] md:text-[11px] font-bold text-slate-500 uppercase tracking-wider">{label}</span>
+                        <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">{label}</span>
                     </div>
-                    <span className={`text-xs md:text-sm font-black bg-slate-50 px-2.5 py-0.5 rounded-lg ${textColor}`}>{value}</span>
+                    <span className={`text-[10px] font-black bg-slate-50 px-2 py-0.5 rounded-lg ${textColor}`}>{value}</span>
                 </div>
             );
         }
