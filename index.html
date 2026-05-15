@@ -574,13 +574,18 @@
                         <div className="max-w-7xl mx-auto py-2">
                             {/* LINHA 1: BRAND + SEARCH + ACTIONS (INCLUI BOTOES DE EXP) - Ajustada a altura */}
                             <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
-                                <div className="flex flex-col w-full md:w-auto">
-                                    <h1 className="text-xl md:text-2xl font-serif text-slate-900 tracking-wide whitespace-nowrap">  
-                                        <span className="text-blue-600 font-black mr-2">IDW</span> Dashboard
-                                    </h1>
-                                    <p className="text-slate-500 font-medium text-[10px] md:text-xs whitespace-nowrap">
-                                        Gestão 2026 • <span className="text-indigo-600 font-bold">{user?.email}</span>
-                                    </p>
+                                
+                                {/* AQUI O NOVO LOGOTIPO CENTRALIZADO E ALINHADO À ESQUERDA DO TÍTULO */}
+                                <div className="flex items-center gap-3 w-full md:w-auto">
+                                    <img src="Logo+IDW.png" alt="IDW Logo" className="h-8 md:h-10 w-auto object-contain" />
+                                    <div className="flex flex-col">
+                                        <h1 className="text-xl md:text-2xl font-serif text-slate-900 tracking-wide whitespace-nowrap">  
+                                            <span className="text-blue-600 font-black mr-2">IDW</span> Dashboard
+                                        </h1>
+                                        <p className="text-slate-500 font-medium text-[10px] md:text-xs whitespace-nowrap">
+                                            Gestão 2026 • <span className="text-indigo-600 font-bold">{user?.email}</span>
+                                        </p>
+                                    </div>
                                 </div>
 
                                 <div className="relative flex-1 w-full max-w-sm">
