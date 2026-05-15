@@ -579,10 +579,14 @@
                                             <img src="Logo+IDW.png" alt="IDW Logo" className="h-8 md:h-10 w-auto object-contain" />
                                             <div className="flex flex-col">
                                                 {/* Alterado para font-['Josefin_Sans'] e adicionado font-light para o efeito "Light" */}
-                                                <h1 className="text-xl md:text-2xl font-['Josefin_Sans'] font-light text-slate-500 tracking-wide whitespace-nowrap">  
-                                                    {/* Mantido o font-light herdado do h1, apenas aplicando a cor azul */}
-                                                    <span className="text-[#009ee2] mr-2">Projetos</span> ANSR
-                                                </h1>
+                                               {/* O h1 continua controlando a estrutura, o tamanho e o espaçamento */}
+                                                    <h1 className="text-xl md:text-2xl font-['Josefin_Sans'] font-light tracking-wide whitespace-nowrap">  
+                                                        {/* "Projetos" continua azul */}
+                                                        <span className="text-[#009ee2] mr-2">Projetos</span> 
+                                                        
+                                                        {/* ALTERAÇÃO AQUI: "ANSR" agora está isolado e com a classe text-black */}
+                                                        <span className="text-black">ANSR</span>
+                                                    </h1>
                                                 <p className="text-slate-500 font-medium text-[10px] md:text-xs whitespace-nowrap">
                                                     Gestão 2026 • <span className="text-red-700 font-bold italic">{user?.email}</span>
                                                 </p>
