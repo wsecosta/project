@@ -186,7 +186,7 @@
             const [subtaskData, setSubtaskData] = useState({ parentId: '', subId: null, title: '', note: '' });
 
             // VERIFICA SE O UTILIZADOR É APENAS DE LEITURA
-            const isReadOnly = user?.email === 'leitura@ansr.pt';
+            const isReadOnly = user?.email === 'user-teste@idw.pt';
 
             const sortedProjects = useMemo(() => {
                 const statusWeight = { 'Andamento': 1, 'Pendente': 2, 'Planeamento': 3, 'Concluído': 4 };
